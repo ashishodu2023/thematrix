@@ -62,6 +62,61 @@ uv run matrix-daemon stop
 
 Logs: `.matrix_daemon.log` · PID: `.matrix_daemon.pid`
 
+## Possible outcomes
+
+Every finished cycle writes a terminal `outcome` string (and `awakened` flag)
+via `blue_ending` or `resolve_choice`. Path forks and HITLs below shape which
+ending you get.
+
+### Terminal endings (`outcome`)
+
+| Ending | When | `awakened` | Summary |
+|---|---|---:|---|
+| **Blue pill** | `pill_choice=blue` | no | Wakes in bed; believes what they want to believe. (Also set early in `blue_ending` before epilogue.) |
+| **The One begins** | red + `fight` + `training_score≥8` + `code=accept` | yes | Full path — bug/trust/steak/jump/showdown/radio + sees the code. |
+| **Beginning of belief** | red + `fight` + `training_score≥6` (but not the full “One” bar) | yes | Trains, fights Smith, radio/code recorded — belief starts. |
+| **Rescued by Trinity** | red + `fight` + `training_score<6` | yes | Undertrained; Smith nearly wins; rescued (radio/code noted). |
+| **Lives to fight another cycle** | red + `flee` | yes | Trains, flees to a hardline; survives for another cycle. |
+| **Desert of the real** | red + no fight/flee recorded | yes | Unplugged fallback — welcome to the desert of the real. |
+
+Blue-pill runs skip Acts III–V and go straight to epilogue/persist after `blue_ending`.
+
+### HITL choices (Operator / daemon)
+
+| Kind | Options | Effect |
+|---|---|---|
+| `bug` | `extract` \| `refuse` | Extract → dream path; refuse → `bug_refuse` then dream (bug implanted). |
+| `trust` | `trust` \| `walk` | Trust → Morpheus briefing; walk → `early_doubt` then Architect. |
+| `oracle_question` | free text | Stored as `oracle_question`; Oracle answers before cafe. |
+| `pill` | `red` \| `blue` | **Branch point** — red → ship/awakening; blue → blue ending. |
+| `steak` | `steak` \| `refuse` | Steak → Cypher regret beat; refuse → skip to sentinel. |
+| `jump` | `jump` \| `hesitate` | Affects training narrative / score path into combat. |
+| `fight_or_flee` | `fight` \| `flee` | **Major** input to terminal ending (see table above). |
+| `radio` | `call` \| `silent` | Embedded in red-path outcome text. |
+| `code` | `accept` \| `deny` | Accept +3 training score + `code_sight`; required with high score for “The One begins”. |
+
+Invalid / empty HITL answers fall back: pill→`blue`, fight→`flee`, code→`accept`, etc.
+
+### Non-HITL path statuses (folded into endings)
+
+| Field | Possible values | How it arises |
+|---|---|---|
+| `pursuit_status` | `idle` → `chasing` → `escaped` \| `caught` | Smith pursuit loop (LLM action biases odds); max rounds ⇒ `escaped`. |
+| `showdown_status` | `won` \| `escaped` | Subway showdown: `won` if `training_score≥6` when done; else `escaped`. |
+| `reality_rewritten` | `true` \| `false` | `bend_reality` vs `enforce_reality` after Agent swarm reconcile. |
+| Architect route | consult Oracle \| skip to cafe | Architect `character_act`; threat ≥ `MATRIX_THREAT_SKIP_ORACLE` (default 7) forces cafe. |
+| Independent scene acts | e.g. swarm `scan/hunt/contain/observe`, lobby `cover/advance/…` | Logged in `character_actions` / `agent_memory`; color narrative, not the terminal ending key. |
+
+### Example red-path “The One” recipe
+
+```
+bug=extract → trust=trust → pill=red → steak=refuse → jump=jump
+→ fight=fight → radio=call → code=accept
+(+ construct training_score ≥ 8, showdown won)
+```
+
+→ outcome contains *“sees the code — The One begins.”* · `awakened=true`
+
 ## Tests
 
 ```bash
