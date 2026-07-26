@@ -3,21 +3,22 @@ from typing import Literal
 from langgraph.types import Command
 
 from matrix import story
-from matrix.characters import PERSONAS
+from matrix.awareness import use_state
 from matrix.config import config
-from matrix.llm import speak
+from matrix.llm import character_act
 from matrix.tools.agent_tools import pursue_step
 from matrix.world import LOCATIONS
 
 
 def pursuit_loop(
     state: dict,
-) -> Command[Literal["pursuit_loop", "pill_choice"]]:
+) -> Command[Literal["pursuit_loop", "morpheus_offer"]]:
     """
-    Agent Smith chase — Command API self-loop until escape/caught/max rounds.
+    Agent Smith chase — independent LLM action each round + Command self-loop.
     """
     round_no = int(state.get("pursuit_round") or 0) + 1
-    loc = LOCATIONS["subway"] if round_no % 2 else LOCATIONS["rooftop"]
+    cycle = ["subway", "rooftop", "highway"]
+    loc = LOCATIONS[cycle[(round_no - 1) % len(cycle)]]
 
     if round_no == 1:
         story.scene("PURSUIT")
@@ -25,20 +26,28 @@ def pursuit_loop(
 
     story.say(f"Round {round_no}/{config.pursuit_max_rounds} @ {loc.name}")
 
-    voice = speak(
-        PERSONAS["smith"],
-        (
-            f"Pursuit round {round_no}. Reality rewritten="
-            f"{state.get('reality_rewritten')}. "
-            "Growl one hunting sentence."
-        ),
-    )
-    story.speak_as("Agent Smith", voice)
+    with use_state(state):
+        decision, patches = character_act(
+            "smith",
+            ["close_in", "cut_off", "intimidate", "hold"],
+            (
+                f"Pursuit round {round_no}/{config.pursuit_max_rounds} at {loc.name}. "
+                f"Reality rewritten={state.get('reality_rewritten')}. "
+                f"Prior pursuit log: {list(state.get('pursuit_log') or [])[-3:]}. "
+                "Choose your independent hunting action."
+            ),
+            state=state,
+        )
+
+    story.speak_as("Agent Smith", decision.speech)
+    if decision.learned:
+        story.beat(f"Smith learned: {decision.learned}")
 
     status, narration = pursue_step(
         "Smith",
         round_no,
         bool(state.get("reality_rewritten")),
+        preferred=decision.action,
     )
     story.beat(narration)
 
@@ -46,11 +55,12 @@ def pursuit_loop(
         "pursuit_round": round_no,
         "location": loc.id,
         "scene": "pursuit",
-        "dialogue": [f"Agent Smith: {voice}"],
-        "pursuit_log": [narration],
-        "events": [f"pursuit:r{round_no}:{status}"],
+        "dialogue": [f"Agent Smith: {decision.speech}"],
+        "pursuit_log": [f"{narration} (action={decision.action})"],
+        "events": [f"pursuit:r{round_no}:{status}:{decision.action}"],
         "log": [f"[pursuit] {narration}"],
         "locations_visited": [loc.id],
+        **patches,
     }
 
     if status in {"escaped", "caught"}:
@@ -59,18 +69,17 @@ def pursuit_loop(
                 **base_update,
                 "pursuit_status": status,
             },
-            goto="pill_choice",
+            goto="morpheus_offer",
         )
 
     if round_no >= config.pursuit_max_rounds:
-        # Time runs out — Neo slips away.
         return Command(
             update={
                 **base_update,
                 "pursuit_status": "escaped",
                 "pursuit_log": ["Max rounds — Neo escapes through a hardline."],
             },
-            goto="pill_choice",
+            goto="morpheus_offer",
         )
 
     return Command(

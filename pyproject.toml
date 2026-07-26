@@ -21,6 +21,8 @@ dev = ["pytest>=8.0.0"]
 matrix-jack-in = "matrix.start_driver:main"
 matrix-resume = "matrix.resume_driver:main"
 matrix-redis = "matrix.utils.redis_explorer:main"
+matrix-daemon = "matrix.daemon:main"
+matrix-pull-brains = "matrix.pull_brains:main"
 
 [build-system]
 requires = ["hatchling"]

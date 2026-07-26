@@ -14,6 +14,13 @@ class PreviousLife(BaseModel):
     reality_rewritten: bool = False
     training_score: int = 0
     fight_choice: str = ""
+    trust_choice: str = ""
+    jump_choice: str = ""
+    radio_choice: str = ""
+    bug_choice: str = ""
+    steak_choice: str = ""
+    code_choice: str = ""
+    showdown_status: str = ""
     locations_visited: list[str] = Field(default_factory=list)
 
 
@@ -23,6 +30,8 @@ class MatrixSession(BaseModel):
     human_id: str
     lives: list[PreviousLife] = Field(default_factory=list)
     awakened_count: int = 0
+    # Cross-cycle facts characters learned about each other
+    agent_knowledge: list[str] = Field(default_factory=list)
     updated_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc)
     )

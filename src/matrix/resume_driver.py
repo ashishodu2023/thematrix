@@ -1,12 +1,16 @@
 """
 Operator outside the Matrix — resume a paused jack-in.
 
-Usage examples:
-    matrix-resume "Am I the One?"     # oracle_question interrupt
-    matrix-resume red                 # pill interrupt
-    matrix-resume blue
-    matrix-resume fight               # fight_or_flee interrupt
-    matrix-resume flee
+Kinds:
+  bug      extract | refuse
+  trust    trust | walk
+  oracle   free text
+  pill     red | blue
+  steak    steak | refuse
+  jump     jump | hesitate
+  fight    fight | flee
+  radio    call | silent
+  code     accept | deny
 """
 
 from __future__ import annotations
@@ -18,6 +22,17 @@ from langgraph.types import Command
 from matrix import story
 from matrix.graph import get_graph
 from matrix.thread_store import load_active_thread
+
+_CHOICE_KINDS = {
+    "bug": {"extract", "refuse"},
+    "trust": {"trust", "walk"},
+    "pill": {"red", "blue"},
+    "steak": {"steak", "refuse"},
+    "jump": {"jump", "hesitate"},
+    "fight_or_flee": {"fight", "flee"},
+    "radio": {"call", "silent"},
+    "code": {"accept", "deny"},
+}
 
 
 def _interrupt_kind(snapshot) -> str | None:
@@ -32,27 +47,27 @@ def _interrupt_kind(snapshot) -> str | None:
 
 def _parse_resume(kind: str | None, args: list[str]) -> str:
     joined = " ".join(args).strip()
+    defaults = {
+        "oracle_question": "Am I the One?",
+        "bug": "extract",
+        "trust": "trust",
+        "pill": "red",
+        "steak": "refuse",
+        "jump": "jump",
+        "fight_or_flee": "flee",
+        "radio": "call",
+        "code": "accept",
+    }
     if not joined:
-        if kind == "oracle_question":
-            return "Am I the One?"
-        if kind == "pill":
-            return "red"
-        if kind == "fight_or_flee":
-            return "flee"
-        return "red"
+        return defaults.get(kind or "", "red")
 
     lowered = joined.lower()
-    if kind == "pill":
-        if lowered not in {"red", "blue"}:
-            print("Pill interrupt expects: red | blue")
+    allowed = _CHOICE_KINDS.get(kind or "")
+    if allowed is not None:
+        if lowered not in allowed:
+            print(f"{kind} interrupt expects: {' | '.join(sorted(allowed))}")
             sys.exit(1)
         return lowered
-    if kind == "fight_or_flee":
-        if lowered not in {"fight", "flee"}:
-            print("Fight/flee interrupt expects: fight | flee")
-            sys.exit(1)
-        return lowered
-    # oracle_question — free text
     return joined
 
 
@@ -106,7 +121,6 @@ def main(argv: list[str] | None = None) -> None:
             raise SystemExit(1) from exc
         raise
 
-    # May pause again on the next HITL
     interrupts_out = result.get("__interrupt__") if isinstance(result, dict) else None
     if interrupts_out:
         first = interrupts_out[0]

@@ -1,8 +1,8 @@
 from langgraph.types import interrupt
 
 from matrix import story
-from matrix.characters import PERSONAS
-from matrix.llm import speak
+from matrix.awareness import aware_node
+from matrix.llm import character_speak
 from matrix.world import LOCATIONS
 
 
@@ -29,14 +29,14 @@ def oracle_question(state: dict) -> dict:
     }
 
 
+@aware_node
 def oracle_speak(state: dict) -> dict:
     """Oracle answers via Ollama."""
     loc = LOCATIONS["oracle_apartment"]
     story.scene("THE ORACLE")
     story.say(f"{loc.name}: {loc.description}")
 
-    prophecy = speak(
-        PERSONAS["oracle"],
+    prophecy = character_speak("oracle",
         (
             f"The human asks: '{state.get('oracle_question') or 'Am I the One?'}'. "
             f"Anomaly in the city: {state['anomaly']}. "

@@ -43,3 +43,16 @@ class SessionMemory:
             session.awakened_count += 1
         cls.save(session)
         return session
+
+    @classmethod
+    def remember_agents(cls, human_id: str, observations: list[str]) -> MatrixSession:
+        """Persist multi-agent learning so next cycle brains still know peers."""
+        session = cls.load(human_id)
+        for obs in observations:
+            text = (obs or "").strip()
+            if text and text not in session.agent_knowledge:
+                session.agent_knowledge.append(text)
+        # Cap growth
+        session.agent_knowledge = session.agent_knowledge[-80:]
+        cls.save(session)
+        return session

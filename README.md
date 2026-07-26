@@ -1,106 +1,69 @@
 # The Matrix
 
-Cinematic multi-agent LangGraph simulation of the control plane from *The Matrix*,
-with **real local dialogue via Ollama**.
+Multi-act cinematic LangGraph simulation with **rank-scaled Ollama brains**,
+**shared multi-agent awareness**, and an optional **background daemon**.
 
-| Movie idea | LangGraph analogue |
-|---|---|
-| Simulation kernel | Shared state + reducers + world locations |
-| Agents (Smith / Jones / Brown) | Send API swarm + Ollama personas + tools |
-| Architect / Oracle | Command API supervisor + HITL question + Ollama |
-| Humans jacked in | Fresh thread ids + multi-HITL interrupts |
-| “There is no spoon” | Conditional edges rewrite `physics_rules` |
-| Pursuit | Command self-loop until escape / caught |
-| Construct | Nested subgraph (load → spar → score) |
-| Operator outside | Redis checkpoints + session lives + resume CLI |
+## Rank → brain (bigger LLM = higher Matrix rank)
 
-## Flow
+| Rank | Character | Default Ollama model | ~Size |
+|---:|---|---|---|
+| 1 | Spoon Boy | `tinyllama` | 1.1B |
+| 2 | Jones | `gemma2:2b` | 2B |
+| 3 | Brown | `gemma2:2b` | 2B |
+| 4 | Tank | `phi3:mini` | 3.8B |
+| 5 | Cypher | `qwen2.5:3b` | 3B |
+| 6 | Operator | `llama3.2` | 3B |
+| 7 | Trinity | `mistral` | 7B |
+| 8 | Morpheus | `llama3.1` | 8B |
+| 9 | Neo | `qwen2.5:7b` | 7B |
+| 10 | Smith | `gemma2:9b` | 9B |
+| 11 | Oracle | `qwen2.5:14b` | 14B |
+| 12 | Architect | `qwen2.5:32b` | 32B |
 
-```mermaid
-flowchart TD
-    START([START]) --> kernel[simulation_kernel]
-    kernel --> architect[architect Command]
-    architect -->|threat low/med| oracleAsk[oracle_question HITL]
-    architect -->|threat high| cafe
-    oracleAsk --> oracleSpeak[oracle_speak Ollama]
-    oracleSpeak --> cafe[cafe_scene]
-    cafe --> swarm[prepare_swarm Send]
-    swarm --> agents[agent_worker xN Ollama]
-    agents --> reconcile
-    reconcile -->|anomaly| bend[bend_reality]
-    reconcile -->|stable| enforce[enforce_reality]
-    bend --> pursuit
-    enforce --> pursuit
-    pursuit[pursuit_loop Command] -->|caught/escape| pill[pill_choice HITL]
-    pill -->|blue| blueEnd[blue_ending]
-    pill -->|red| construct[construct_training subgraph]
-    construct --> fightOrFlee[fight_or_flee HITL]
-    fightOrFlee --> resolve[resolve_choice]
-    blueEnd --> persist
-    resolve --> persist[operator_persist]
-    persist --> END([END])
-```
+Override any brain: `MATRIX_BRAIN_NEO=…`, `MATRIX_BRAIN_ARCHITECT=…`, etc.
 
-## Setup
+## Multi-agent learning & independent action
 
-Needs **Redis** (`localhost:6379`) and **Ollama**.
+Every character receives a shared **awareness dossier** (other Agents’ dialogue,
+reports, prior actions, Oracle/Architect echoes, Redis cross-cycle memory).
+
+Key scenes call `character_act`: each brain **chooses its own action**, speaks,
+and records a **LEARN** fact about peers. Swarm Agents, Smith’s pursuit, the
+Architect’s routing, cafe, and lobby all decide independently. Learning persists
+via `SessionMemory.agent_knowledge` for the next jack-in.
 
 ```bash
-# Ollama
 ollama serve
-ollama pull llama3.2
-
-# Project
-cd ~/Documents/matrix
-uv sync --extra dev
+uv run matrix-pull-brains    # pulls every rank-scaled model (large!)
 ```
 
-Optional env:
+Tip: if 14B/32B are too heavy, override down, e.g.
+`MATRIX_BRAIN_ARCHITECT=qwen2.5:7b MATRIX_BRAIN_ORACLE=qwen2.5:7b`.
 
-| Variable | Default |
-|---|---|
-| `OLLAMA_BASE_URL` | `http://localhost:11434` |
-| `OLLAMA_MODEL` | `llama3.2` |
-| `MATRIX_THREAT_SKIP_ORACLE` | `7` |
-| `MATRIX_PURSUIT_MAX_ROUNDS` | `3` |
-
-## Run (story mode)
-
-Each jack-in uses a **fresh** Redis thread (no piled-up Agent reports).
-There are **up to 3 pauses** — resume each one from a separate process.
+## Interactive run
 
 ```bash
-# 1) Jack in — usually pauses at Oracle question
 uv run matrix-jack-in
-
-# 2) Answer the Oracle (free text)
-uv run matrix-resume "Am I the One?"
-
-# 3) After cafe / swarm / pursuit — choose the pill
-uv run matrix-resume red
-# or: uv run matrix-resume blue
-
-# 4) If red — Construct training then fight/flee
-uv run matrix-resume fight
-# or: uv run matrix-resume flee
-
-# Inspect Redis
-uv run matrix-redis
+uv run matrix-resume extract
+# … continue through HITLs …
 ```
 
-If you resume a finished thread, you get `ALREADY FINISHED` (pill choice is one-shot per jack-in).
+## Daemon (continuous background)
 
-### Knobs (`start_driver.py`)
+Auto-plays full cycles; Operator LLM chooses each HITL.
 
-- `threat_level >= 7` — skip Oracle HITL, go straight to cafe
-- `anomaly` — `"spoon"` | `"glitch"` | `"none"`
+```bash
+uv run matrix-daemon start
+uv run matrix-daemon start --cycles 3 --interval 60
+uv run matrix-daemon start --foreground --cycles 1
+uv run matrix-daemon status
+uv run matrix-daemon stop
+```
+
+Logs: `.matrix_daemon.log` · PID: `.matrix_daemon.pid`
 
 ## Tests
 
 ```bash
-# Mocked LLM — no Ollama required
 uv run pytest -q
-
-# Optional live Ollama smoke
-MATRIX_OLLAMA_SMOKE=1 uv run pytest -q -m ollama
 ```

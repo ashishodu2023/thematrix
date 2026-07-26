@@ -18,6 +18,16 @@ LOCATIONS: dict[str, Location] = {
         "Jack-in Point",
         "Hardline phone booth on the edge of Mega City.",
     ),
+    "apartment": Location(
+        "apartment",
+        "Neo's Apartment",
+        "Stacks of monitors; the word Wake Up flashes green.",
+    ),
+    "club": Location(
+        "club",
+        "The Club",
+        "Bass and bodies; Trinity finds you in the crowd.",
+    ),
     "oracle_apartment": Location(
         "oracle_apartment",
         "The Oracle's Apartment",
@@ -27,6 +37,11 @@ LOCATIONS: dict[str, Location] = {
         "cafe",
         "The Spoon Cafe",
         "A quiet cafe where a child bends silverware with belief.",
+    ),
+    "hotel_lobby": Location(
+        "hotel_lobby",
+        "Government Lobby",
+        "Marble floors, pillars, and a security desk that will not last.",
     ),
     "subway": Location(
         "subway",
@@ -38,10 +53,20 @@ LOCATIONS: dict[str, Location] = {
         "Rooftop Chase",
         "Rain-slick concrete; gravity is optional if you believe.",
     ),
+    "highway": Location(
+        "highway",
+        "Mega City Highway",
+        "Trucks as cover; Agents rewrite drivers mid-pursuit.",
+    ),
     "construct": Location(
         "construct",
         "The Construct",
         "White void loading dock — anything can be loaded.",
+    ),
+    "nebuchadnezzar": Location(
+        "nebuchadnezzar",
+        "Nebuchadnezzar",
+        "Hovercraft of rusty steel; Zion's thin line of hope.",
     ),
     "real_world": Location(
         "real_world",
@@ -56,17 +81,3 @@ DEFAULT_PHYSICS = [
     "causality",
     "spoon_exists",
 ]
-
-SCENES = (
-    "jack_in",
-    "architect",
-    "oracle",
-    "cafe",
-    "swarm",
-    "reality",
-    "pursuit",
-    "pill",
-    "construct",
-    "resolve",
-    "operator",
-)

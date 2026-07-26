@@ -5,7 +5,7 @@ Each jack-in starts a fresh thread_id so reducer lists do not pile up.
 """
 
 from matrix import story
-from matrix.graph import get_graph
+from matrix.graph import get_graph, reset_graph_cache
 from matrix.thread_store import new_thread_id
 
 INITIAL_STATE = {
@@ -31,10 +31,22 @@ INITIAL_STATE = {
     "pursuit_log": [],
     "pending_decision": "",
     "pill_choice": "",
+    "trust_choice": "",
+    "bug_choice": "",
+    "steak_choice": "",
+    "jump_choice": "",
     "fight_choice": "",
+    "radio_choice": "",
+    "code_choice": "",
     "awakened": False,
+    "bug_implanted": False,
+    "sentinel_alert": False,
     "training_skills": [],
     "training_score": 0,
+    "showdown_round": 0,
+    "showdown_status": "",
+    "dream_note": "",
+    "briefing": "",
     "dialogue": [],
     "events": [],
     "log": [],
@@ -54,12 +66,13 @@ def _interrupt_payload(result: dict) -> dict:
 
 
 def main() -> None:
+    reset_graph_cache()
     thread_id = new_thread_id(INITIAL_STATE["human_id"])
     config = {"configurable": {"thread_id": thread_id}}
     graph = get_graph()
 
     print()
-    print("THE MATRIX — cinematic story mode (Ollama)")
+    print("THE MATRIX — multi-act cinematic mode (Ollama)")
     print(f"Fresh thread: {thread_id}")
 
     try:

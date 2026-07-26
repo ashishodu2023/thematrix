@@ -20,6 +20,19 @@ def speak_as(who: str, line: str) -> None:
     print(f'  {who}: "{line}"')
 
 
+_RESUME_HINTS = {
+    "bug": "uv run matrix-resume extract   # or refuse",
+    "trust": "uv run matrix-resume trust   # or walk",
+    "oracle_question": 'uv run matrix-resume "Am I the One?"',
+    "pill": "uv run matrix-resume red   # or blue",
+    "steak": "uv run matrix-resume refuse   # or steak",
+    "jump": "uv run matrix-resume jump   # or hesitate",
+    "fight_or_flee": "uv run matrix-resume fight   # or flee",
+    "radio": "uv run matrix-resume call   # or silent",
+    "code": "uv run matrix-resume accept   # or deny",
+}
+
+
 def pause_for_interrupt(thread_id: str, kind: str, hint: str, values: dict) -> None:
     scene("THE MATRIX PAUSES")
     say(f"Pending decision: {kind}")
@@ -30,26 +43,27 @@ def pause_for_interrupt(thread_id: str, kind: str, hint: str, values: dict) -> N
         say(f"Location: {values['location']}")
     print()
     say("You are the Operator (outside the simulation).")
-    if kind == "oracle_question":
-        beat('Resume with:  uv run matrix-resume "Am I the One?"')
-    elif kind == "pill":
-        beat("Resume with:  uv run matrix-resume red   # or blue")
-    elif kind == "fight_or_flee":
-        beat("Resume with:  uv run matrix-resume fight   # or flee")
-    else:
-        beat(f"Resume with:  uv run matrix-resume <answer>")
+    beat(f"Resume with:  {_RESUME_HINTS.get(kind, 'uv run matrix-resume <answer>')}")
     beat(f"Thread saved:  {thread_id}")
 
 
 def ending(result: dict) -> None:
     scene("OUTCOME")
     say(result.get("outcome") or "(no outcome)")
+    say(f"Cycle: {result.get('cycle')}")
     say(f"Awakened: {result.get('awakened')}")
-    say(f"Fight choice: {result.get('fight_choice') or 'n/a'}")
+    say(f"Bug: {result.get('bug_choice') or 'n/a'}")
+    say(f"Trust: {result.get('trust_choice') or 'n/a'}")
+    say(f"Steak: {result.get('steak_choice') or 'n/a'}")
+    say(f"Jump: {result.get('jump_choice') or 'n/a'}")
+    say(f"Fight: {result.get('fight_choice') or 'n/a'}")
+    say(f"Radio: {result.get('radio_choice') or 'n/a'}")
+    say(f"Code: {result.get('code_choice') or 'n/a'}")
+    say(f"Showdown: {result.get('showdown_status') or 'n/a'}")
     say(f"Training score: {result.get('training_score', 0)}")
     say(f"Physics now: {', '.join(result.get('physics_rules') or [])}")
     say(f"Lives recorded outside the Matrix: {result.get('previous_lives')}")
-    visited = result.get("locations_visited") or []
+    visited = list(dict.fromkeys(result.get("locations_visited") or []))
     if visited:
         say(f"Path: {' → '.join(visited)}")
     print()
