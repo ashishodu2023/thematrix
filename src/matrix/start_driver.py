@@ -5,6 +5,7 @@ Each jack-in starts a fresh thread_id so reducer lists do not pile up.
 """
 
 from matrix import story
+from matrix import theme
 from matrix.graph import get_graph, reset_graph_cache
 from matrix.thread_store import new_thread_id
 
@@ -53,6 +54,8 @@ INITIAL_STATE = {
     "outcome": "",
     "previous_lives": 0,
     "locations_visited": [],
+    "agent_memory": [],
+    "character_actions": [],
 }
 
 
@@ -71,9 +74,10 @@ def main() -> None:
     config = {"configurable": {"thread_id": thread_id}}
     graph = get_graph()
 
-    print()
-    print("THE MATRIX — multi-act cinematic mode (Ollama)")
-    print(f"Fresh thread: {thread_id}")
+    theme.banner()
+    theme.out("Multi-act cinematic mode (Ollama)", bold=True)
+    theme.out(f"Fresh thread: {thread_id}")
+    theme.out()
 
     try:
         result = graph.invoke(INITIAL_STATE, config=config)

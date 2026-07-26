@@ -1,23 +1,25 @@
-"""Story-mode cinematic narration."""
+"""Story-mode cinematic narration — Matrix green on black."""
 
 from __future__ import annotations
 
+from matrix import theme
+
 
 def scene(title: str) -> None:
-    print()
-    print(f"══ {title} ══")
+    theme.out()
+    theme.out(f"══ {title} ══", bold=True)
 
 
 def say(line: str) -> None:
-    print(f"  {line}")
+    theme.out(f"  {line}")
 
 
 def beat(line: str) -> None:
-    print(f"  → {line}")
+    theme.out(f"  → {line}", dim=True)
 
 
 def speak_as(who: str, line: str) -> None:
-    print(f'  {who}: "{line}"')
+    theme.out(f'  {who}: "{line}"')
 
 
 _RESUME_HINTS = {
@@ -41,7 +43,7 @@ def pause_for_interrupt(thread_id: str, kind: str, hint: str, values: dict) -> N
         say(f'Last prophecy: "{values["oracle_prophecy"]}"')
     if values.get("location"):
         say(f"Location: {values['location']}")
-    print()
+    theme.out()
     say("You are the Operator (outside the simulation).")
     beat(f"Resume with:  {_RESUME_HINTS.get(kind, 'uv run matrix-resume <answer>')}")
     beat(f"Thread saved:  {thread_id}")
@@ -66,7 +68,7 @@ def ending(result: dict) -> None:
     visited = list(dict.fromkeys(result.get("locations_visited") or []))
     if visited:
         say(f"Path: {' → '.join(visited)}")
-    print()
+    theme.out()
 
 
 def already_finished(thread_id: str, values: dict, requested: str) -> None:
@@ -74,7 +76,7 @@ def already_finished(thread_id: str, values: dict, requested: str) -> None:
     say(f"Thread {thread_id} already completed — no pending interrupt.")
     say(f"Last outcome: {values.get('outcome')}")
     say(f"Last pill: {values.get('pill_choice')} (you asked for: {requested})")
-    print()
+    theme.out()
     beat("Start a new jack-in first:")
     beat("  uv run matrix-jack-in")
-    print()
+    theme.out()

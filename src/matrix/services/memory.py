@@ -52,7 +52,7 @@ class SessionMemory:
             text = (obs or "").strip()
             if text and text not in session.agent_knowledge:
                 session.agent_knowledge.append(text)
-        # Cap growth
-        session.agent_knowledge = session.agent_knowledge[-80:]
+        # Cap growth under continuous reincarnation
+        session.agent_knowledge = session.agent_knowledge[-200:]
         cls.save(session)
         return session
