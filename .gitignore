@@ -1,0 +1,12 @@
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.venv
+.env
+.active_thread
+.pytest_cache/
+.ruff_cache/
+uv.lock

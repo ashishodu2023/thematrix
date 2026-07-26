@@ -1,0 +1,142 @@
+"""Unit tests with mocked Ollama (no server required)."""
+
+import matrix.nodes.architect as architect_mod
+import matrix.nodes.cafe as cafe_mod
+import matrix.nodes.construct as construct_mod
+import matrix.nodes.pursuit as pursuit_mod
+from matrix.nodes.architect import architect
+from matrix.nodes.cafe import cafe_scene
+from matrix.nodes.construct import load_skills, spar
+from matrix.nodes.kernel import simulation_kernel
+from matrix.nodes.pill import resolve_choice
+from matrix.nodes.pursuit import pursuit_loop
+
+
+def _base(**overrides):
+    state = {
+        "human_id": "neo",
+        "city": "Mega City",
+        "cycle": 1,
+        "location": "",
+        "scene": "",
+        "physics_rules": ["gravity", "solidity", "causality", "spoon_exists"],
+        "anomaly": "spoon",
+        "threat_level": 4,
+        "architect_plan": "",
+        "oracle_question": "Am I the One?",
+        "oracle_prophecy": "",
+        "agent_names": ["Smith"],
+        "current_agent": "Smith",
+        "agent_reports": [],
+        "sectors_scanned": [],
+        "spoon_exists": True,
+        "reality_rewritten": True,
+        "pursuit_round": 0,
+        "pursuit_status": "idle",
+        "pursuit_log": [],
+        "pending_decision": "",
+        "pill_choice": "",
+        "fight_choice": "",
+        "awakened": False,
+        "training_skills": [],
+        "training_score": 0,
+        "dialogue": [],
+        "events": [],
+        "log": [],
+        "outcome": "",
+        "previous_lives": 0,
+        "locations_visited": [],
+    }
+    state.update(overrides)
+    return state
+
+
+def _silence(monkeypatch):
+    """Nodes import `from matrix import story` — patch the shared module."""
+    monkeypatch.setattr("matrix.story.scene", lambda *_a, **_k: None)
+    monkeypatch.setattr("matrix.story.say", lambda *_a, **_k: None)
+    monkeypatch.setattr("matrix.story.beat", lambda *_a, **_k: None)
+    monkeypatch.setattr("matrix.story.speak_as", lambda *_a, **_k: None)
+
+
+def test_kernel_boot(monkeypatch):
+    class FakeSession:
+        lives = []
+
+    monkeypatch.setattr(
+        "matrix.nodes.kernel.SessionMemory.load",
+        lambda human_id: FakeSession(),
+    )
+    _silence(monkeypatch)
+    result = simulation_kernel(_base())
+    assert result["city"] == "Mega City"
+    assert result["previous_lives"] == 0
+    assert result["location"] == "jack_point"
+
+
+def test_architect_routes_to_oracle(monkeypatch):
+    _silence(monkeypatch)
+    monkeypatch.setattr(
+        architect_mod,
+        "speak",
+        lambda *_a, **_k: "Systemic anomaly detected.",
+    )
+    cmd = architect(_base(threat_level=4))
+    assert cmd.goto == "oracle_question"
+
+
+def test_architect_skips_oracle_on_high_threat(monkeypatch):
+    _silence(monkeypatch)
+    monkeypatch.setattr(
+        architect_mod,
+        "speak",
+        lambda *_a, **_k: "Deploy immediately.",
+    )
+    cmd = architect(_base(threat_level=9))
+    assert cmd.goto == "cafe_scene"
+
+
+def test_cafe_scene_uses_llm(monkeypatch):
+    _silence(monkeypatch)
+    monkeypatch.setattr(
+        cafe_mod,
+        "speak",
+        lambda *_a, **_k: "There is no spoon.",
+    )
+    result = cafe_scene(_base())
+    assert result["location"] == "cafe"
+    assert "Spoon Boy" in result["dialogue"][0]
+
+
+def test_pursuit_escape(monkeypatch):
+    _silence(monkeypatch)
+    monkeypatch.setattr(
+        pursuit_mod,
+        "speak",
+        lambda *_a, **_k: "Mr. Anderson...",
+    )
+    monkeypatch.setattr(
+        pursuit_mod,
+        "pursue_step",
+        lambda *_a, **_k: ("escaped", "Neo escapes"),
+    )
+    cmd = pursuit_loop(_base())
+    assert cmd.goto == "pill_choice"
+    assert cmd.update["pursuit_status"] == "escaped"
+
+
+def test_construct_scoring(monkeypatch):
+    _silence(monkeypatch)
+    loaded = load_skills(_base(reality_rewritten=True))
+    assert len(loaded["training_skills"]) == 3
+    scored = spar({**_base(reality_rewritten=True), **loaded})
+    assert scored["training_score"] == 4  # 3 skills + belief bonus
+
+
+def test_resolve_red_fight(monkeypatch):
+    _silence(monkeypatch)
+    result = resolve_choice(
+        _base(pill_choice="red", fight_choice="fight", training_score=4)
+    )
+    assert result["awakened"] is True
+    assert "stands against Smith" in result["outcome"]
