@@ -35,6 +35,22 @@ from matrix.nodes.kernel import simulation_kernel
 from matrix.nodes.lobby import lobby_breach
 from matrix.nodes.operator import operator_persist
 from matrix.nodes.oracle import oracle_question, oracle_speak
+from matrix.meta_game import meta_negotiate
+from matrix.awareness import live_node
+from matrix.nodes.expanded import (
+    highway_chase,
+    keymaker_doors,
+    merovingian_vip,
+    sentinel_hunt,
+    zion_dock,
+)
+from matrix.nodes.field import (
+    field_pulse_a,
+    field_pulse_b,
+    field_pulse_c,
+    field_pulse_d,
+    field_pulse_e,
+)
 from matrix.nodes.pill import (
     blue_ending,
     fight_or_flee,
@@ -80,9 +96,17 @@ def build_graph():
     Act V: code HITL → zion → resolve → epilogue → persist
     """
     builder = StateGraph(MatrixState)
+    _raw_add = builder.add_node
+
+    def add_node(name, action, **kwargs):  # noqa: ANN001
+        """Every node pushes live Operator Console updates."""
+        return _raw_add(name, live_node(action), **kwargs)
+
+    builder.add_node = add_node  # type: ignore[method-assign]
 
     # Act 0
     builder.add_node("simulation_kernel", simulation_kernel)
+    builder.add_node("meta_layer", meta_negotiate)
     builder.add_node("white_rabbit", white_rabbit)
     builder.add_node("office_cube", office_cube)
     builder.add_node("interrogation", interrogation)
@@ -142,25 +166,59 @@ def build_graph():
     builder.add_node("epilogue", epilogue)
     builder.add_node("operator_persist", operator_persist)
 
+    # Parallel Agent field tracks (fan-out beside Neo's story)
+    builder.add_node("field_pulse_a", field_pulse_a)
+    builder.add_node("field_pulse_b", field_pulse_b)
+    builder.add_node("field_pulse_c", field_pulse_c)
+    builder.add_node("field_pulse_d", field_pulse_d)
+    builder.add_node("field_pulse_e", field_pulse_e)
+    builder.add_node("merovingian_vip", merovingian_vip)
+    builder.add_node("keymaker_doors", keymaker_doors)
+    builder.add_node("highway_chase", highway_chase)
+    builder.add_node("sentinel_hunt", sentinel_hunt)
+    builder.add_node("zion_dock", zion_dock)
+
     # --- Edges ---
     builder.add_edge(START, "simulation_kernel")
-    builder.add_edge("simulation_kernel", "white_rabbit")
+    builder.add_edge("simulation_kernel", "meta_layer")
+
+    # Act 0: Neo rabbit ∥ Agent field → join at office
+    builder.add_edge("meta_layer", "white_rabbit")
+    builder.add_edge("meta_layer", "field_pulse_a")
     builder.add_edge("white_rabbit", "office_cube")
+    builder.add_edge("field_pulse_a", "office_cube")
+
+    # Act 0: Neo office ∥ Agents → join at interrogation
     builder.add_edge("office_cube", "interrogation")
+    builder.add_edge("office_cube", "field_pulse_b")
     builder.add_edge("interrogation", "bug_prompt")
+    builder.add_edge("field_pulse_b", "bug_prompt")
+
     builder.add_edge("bug_prompt", "bug_choice")
     # bug_choice Command → dream_glitch | bug_refuse
     builder.add_edge("bug_refuse", "dream_glitch")
 
+    # Act I: dream ∥ Agents → join at meet_trinity
     builder.add_edge("dream_glitch", "meet_trinity")
+    builder.add_edge("dream_glitch", "field_pulse_c")
     builder.add_edge("meet_trinity", "trust_prompt")
+    builder.add_edge("field_pulse_c", "trust_prompt")
+
     builder.add_edge("trust_prompt", "trust_choice")
     builder.add_edge("morpheus_briefing", "architect")
     builder.add_edge("early_doubt", "architect")
 
     builder.add_edge("oracle_question", "oracle_speak")
     builder.add_edge("oracle_speak", "cafe_scene")
-    builder.add_edge("cafe_scene", "prepare_swarm")
+
+    # Expanded Act II set pieces before swarm
+    builder.add_edge("cafe_scene", "merovingian_vip")
+    builder.add_edge("merovingian_vip", "keymaker_doors")
+    builder.add_edge("keymaker_doors", "highway_chase")
+    builder.add_edge("highway_chase", "prepare_swarm")
+    builder.add_edge("highway_chase", "field_pulse_d")
+    builder.add_edge("field_pulse_d", "prepare_swarm")
+
     builder.add_conditional_edges(
         "prepare_swarm",
         dispatch_agents,
@@ -188,13 +246,19 @@ def build_graph():
     builder.add_edge("crew_dinner", "steak_prompt")
     builder.add_edge("steak_prompt", "steak_choice")
     builder.add_edge("steak_regret", "sentinel_scan")
-    builder.add_edge("sentinel_scan", "construct_training")
+    builder.add_edge("sentinel_scan", "sentinel_hunt")
+    builder.add_edge("sentinel_hunt", "construct_training")
     builder.add_edge("construct_training", "jump_offer")
     builder.add_edge("jump_offer", "jump_choice")
     builder.add_edge("jump_choice", "post_jump_training")
     builder.add_edge("post_jump_training", "trinity_warn")
     builder.add_edge("trinity_warn", "fight_or_flee")
+
+    # Act IV: fight choice ∥ Agents still hunting → join combat
     builder.add_edge("fight_or_flee", "combat_beat")
+    builder.add_edge("fight_or_flee", "field_pulse_e")
+    builder.add_edge("field_pulse_e", "combat_beat")
+
     builder.add_edge("combat_beat", "radio_prompt")
     builder.add_edge("radio_prompt", "radio_choice")
     builder.add_edge("radio_choice", "subway_showdown")
@@ -202,7 +266,8 @@ def build_graph():
     builder.add_edge("phone_booth", "code_prompt")
     builder.add_edge("code_prompt", "code_choice")
     builder.add_edge("code_choice", "zion_arrival")
-    builder.add_edge("zion_arrival", "resolve_choice")
+    builder.add_edge("zion_arrival", "zion_dock")
+    builder.add_edge("zion_dock", "resolve_choice")
     builder.add_edge("resolve_choice", "epilogue")
     builder.add_edge("epilogue", "operator_persist")
     builder.add_edge("operator_persist", END)

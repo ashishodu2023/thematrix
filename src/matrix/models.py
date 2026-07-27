@@ -32,6 +32,9 @@ class MatrixSession(BaseModel):
     awakened_count: int = 0
     # Cross-cycle facts characters learned about each other
     agent_knowledge: list[str] = Field(default_factory=list)
+    # Sticky branches that permanently change odds / dialogue
+    sticky_flags: dict[str, bool] = Field(default_factory=dict)
+    co_human_id: str = ""
     updated_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc)
     )

@@ -1,5 +1,5 @@
 import operator
-from typing import Annotated
+from typing import Annotated, Any
 
 from typing_extensions import TypedDict
 
@@ -13,6 +13,25 @@ def unique_extend(left: list[str] | None, right: list[str] | None) -> list[str]:
     return out
 
 
+def merge_scoreboard(
+    left: dict[str, Any] | None, right: dict[str, Any] | None
+) -> dict[str, int]:
+    """Reducer: accumulate faction points across parallel / sequential nodes."""
+    out = {"zion": 0, "agents": 0, "system": 0}
+    for src in (left, right):
+        if not isinstance(src, dict):
+            continue
+        for k, v in src.items():
+            key = str(k).lower()
+            if key not in out:
+                out[key] = 0
+            try:
+                out[key] += int(v)
+            except (TypeError, ValueError):
+                continue
+    return out
+
+
 class MatrixState(TypedDict):
     """
     Shared simulation kernel — the Matrix itself.
@@ -23,6 +42,7 @@ class MatrixState(TypedDict):
 
     # Human jacked in
     human_id: str
+    co_human_id: str  # optional second Operator / Trinity seat
 
     # Simulation kernel / world
     city: str
@@ -32,6 +52,15 @@ class MatrixState(TypedDict):
     physics_rules: list[str]
     anomaly: str  # spoon | glitch | none
     threat_level: int
+    world_tick: int
+    trace_level: float
+    hardline_cooldown: int
+    phone_taps: Annotated[list[str], operator.add]
+    sector_heat: dict
+    agent_positions: dict
+    sticky_flags: dict
+    meta_policy: str
+    faction_scoreboard: Annotated[dict, merge_scoreboard]
 
     # Architect / Oracle
     architect_plan: str
@@ -47,6 +76,7 @@ class MatrixState(TypedDict):
     # Multi-agent awareness — every brain learns about others & acts alone
     agent_memory: Annotated[list[str], operator.add]
     character_actions: Annotated[list[str], operator.add]
+    dialogue: Annotated[list[str], operator.add]
 
     # Rule-bending
     spoon_exists: bool
@@ -59,7 +89,6 @@ class MatrixState(TypedDict):
 
     # HITL
     pending_decision: str
-    # bug | trust | oracle_question | pill | steak | jump | fight_or_flee | radio | code | ""
     pill_choice: str
     trust_choice: str  # trust | walk | ""
     bug_choice: str  # extract | refuse | ""
@@ -68,6 +97,7 @@ class MatrixState(TypedDict):
     fight_choice: str  # fight | flee | ""
     radio_choice: str  # call | silent | ""
     code_choice: str  # accept | deny | ""
+    key_choice: str  # take_key | refuse_key | ""
     awakened: bool
     bug_implanted: bool
     sentinel_alert: bool
@@ -80,8 +110,8 @@ class MatrixState(TypedDict):
     dream_note: str
     briefing: str
 
-    # Narrative
-    dialogue: Annotated[list[str], operator.add]
+    # Parallel subplot labels (neo story + agent field, etc.)
+    active_tracks: Annotated[list[str], operator.add]
     events: Annotated[list[str], operator.add]
     log: Annotated[list[str], operator.add]
     outcome: str

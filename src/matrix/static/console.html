@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>THE MATRIX — Operator Console</title>
+<style>
+  :root {
+    --bg: #010302;
+    --green: #39FF14;
+    --soft: #7CFF7C;
+    --dim: #1f6b2e;
+    --mute: #9ad9a3;
+    --panel: rgba(4, 14, 8, 0.94);
+    --line: #13401c;
+    --danger: #ff3b4e;
+    --warn: #ffd54f;
+    --sys: #80deea;
+    --zion: #39FF14;
+    --agents: #ff3b4e;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; min-height:100%; background:var(--bg); color:var(--green);
+    font-family: "IBM Plex Mono", "SF Mono", ui-monospace, Menlo, monospace; }
+  body { overflow-x: hidden; }
+  #rain {
+    position: fixed; inset: 0; width: 100%; height: 100%;
+    z-index: 0; pointer-events: none; opacity: 0.55;
+  }
+  .shell { position: relative; z-index: 1; max-width: 1320px; margin: 0 auto; padding: 1.1rem 1.2rem 2rem; }
+  .shell .panel, .shell .chip, .shell .meter, .shell .cycle-badge, .shell .map-board, .shell .focus, .shell .zone, .shell .loc {
+    backdrop-filter: blur(2px);
+  }
+  .live-pill {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    border: 1px solid var(--line); padding: 0.2rem 0.55rem;
+    font-size: 0.62rem; letter-spacing: 0.14em; color: var(--mute);
+  }
+  .live-pill .dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--dim);
+  }
+  .live-pill.on .dot { background: var(--green); box-shadow: 0 0 8px var(--green); animation: blink 1.2s infinite; }
+  .live-pill.err .dot { background: var(--danger); }
+  @keyframes blink { 50% { opacity: 0.35; } }
+  .map-head { display:flex; justify-content:space-between; align-items:baseline; gap:0.75rem; margin-bottom:0.65rem; flex-wrap: wrap; }
+
+  .hero {
+    display: grid; grid-template-columns: auto 1fr auto; gap: 1.1rem; align-items: end;
+    margin-bottom: 1rem; padding-bottom: 0.85rem; border-bottom: 1px solid var(--line);
+  }
+  .brand { font-size: clamp(1.7rem, 4vw, 2.5rem); letter-spacing: 0.28em; font-weight: 600; margin: 0; line-height: 1; }
+  .now .label { font-size: 0.62rem; letter-spacing: 0.2em; color: var(--dim); }
+  .now .scene { font-size: clamp(1.05rem, 2.4vw, 1.45rem); color: var(--soft); margin-top: 0.2rem; }
+  .now .where { color: var(--mute); font-size: 0.82rem; margin-top: 0.15rem; }
+  .cycle-badge { border: 1px solid var(--line); padding: 0.5rem 0.8rem; text-align: center; min-width: 5.2rem; }
+  .cycle-badge .n { font-size: 1.5rem; display:block; }
+  .cycle-badge .l { font-size: 0.58rem; letter-spacing: 0.15em; color: var(--dim); }
+
+  .glance { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; margin-bottom: 0.85rem; }
+  @media (max-width: 800px) { .glance { grid-template-columns: 1fr; } .hero { grid-template-columns: 1fr; } }
+  .chip { border: 1px solid var(--line); background: var(--panel); padding: 0.75rem 0.9rem; }
+  .chip .k { font-size: 0.6rem; letter-spacing: 0.18em; color: var(--dim); margin-bottom: 0.3rem; }
+  .chip .v { font-size: 1rem; color: var(--soft); word-break: break-word; }
+  .chip .h { font-size: 0.72rem; color: var(--mute); margin-top: 0.3rem; line-height: 1.35; }
+
+  .meters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.7rem; margin-bottom: 0.85rem; }
+  @media (max-width: 720px) { .meters { grid-template-columns: 1fr 1fr; } }
+  .meter { border: 1px solid var(--line); background: var(--panel); padding: 0.65rem 0.8rem; }
+  .meter label { display:flex; justify-content:space-between; font-size:0.58rem; letter-spacing:0.14em; color:var(--dim); }
+  .meter .val { font-size: 1.35rem; margin: 0.2rem 0 0.4rem; }
+  .meter .hint { font-size: 0.65rem; color: var(--mute); margin-top: 0.3rem; }
+  .bar { height: 6px; background: #07150c; overflow: hidden; }
+  .bar > i { display:block; height:100%; width:0; background: var(--green); transition: width .35s ease; }
+  .bar.hot > i { background: var(--danger); }
+  .bar.warn > i { background: var(--warn); }
+
+  .grid { display: grid; grid-template-columns: 1.35fr 1fr; gap: 0.8rem; }
+  @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
+  .panel { border: 1px solid var(--line); background: var(--panel); padding: 0.85rem 0.95rem 1rem; min-height: 0; }
+  .panel h2 { margin: 0 0 0.65rem; font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim); font-weight: 500; }
+
+  /* —— District map —— */
+  .map-head h2 { margin:0; }
+  .map-hint { font-size: 0.68rem; color: var(--dim); margin: 0.35rem 0 0; }
+  .loc.hunt { box-shadow: inset 0 0 0 1px rgba(255,59,78,0.55), 0 0 12px rgba(255,59,78,0.25); }
+  .loc .heat {
+    position: absolute; top: 0.35rem; left: 0.35rem;
+    font-size: 0.55rem; color: #ff8a95; letter-spacing: 0.04em;
+  }
+  .loc { position: relative; }
+  .map-board {
+    display: grid; gap: 0.75rem;
+    background:
+      radial-gradient(ellipse at 70% 60%, rgba(57,255,20,0.06), transparent 55%),
+      linear-gradient(180deg, rgba(0,0,0,0.2), transparent);
+    border: 1px solid var(--line); padding: 0.75rem; min-height: 420px;
+  }
+  }
+  .zone { border: 1px dashed rgba(31,107,46,0.55); padding: 0.55rem; background: rgba(0,0,0,0.25); }
+  .zone.hot { border-style: solid; border-color: rgba(57,255,20,0.35); }
+  .zone-title {
+    font-size: 0.58rem; letter-spacing: 0.18em; color: var(--dim);
+    margin: 0 0 0.5rem; display:flex; justify-content:space-between; align-items:center;
+  }
+  .zone-title span.tag { color: var(--mute); letter-spacing: 0.08em; }
+  .zone-grid { display: grid; gap: 0.45rem; }
+  .zone-grid.out { grid-template-columns: repeat(3, 1fr); }
+  .zone-grid.city { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 640px) {
+    .zone-grid.out, .zone-grid.city { grid-template-columns: 1fr; }
+  }
+
+  .loc {
+    position: relative; min-height: 92px; border: 1px solid var(--line);
+    background: #041008; padding: 0.45rem 0.5rem 0.5rem; cursor: pointer;
+    transition: border-color .2s, box-shadow .2s, transform .15s;
+  }
+  .loc:hover { border-color: var(--mute); transform: translateY(-1px); }
+  .loc.empty { opacity: 0.55; }
+  .loc.here {
+    border-color: var(--green);
+    box-shadow: 0 0 0 1px rgba(57,255,20,0.35), 0 0 18px rgba(57,255,20,0.18);
+    background: linear-gradient(160deg, #0a2a14, #041008 70%);
+  }
+  .loc.danger { border-color: rgba(255,59,78,0.7); }
+  .loc.danger.here { box-shadow: 0 0 0 1px rgba(255,59,78,0.4), 0 0 16px rgba(255,59,78,0.2); }
+  .loc .ico { font-size: 0.95rem; line-height: 1; margin-bottom: 0.15rem; filter: grayscale(0.2); }
+  .loc .name { font-size: 0.72rem; color: var(--soft); letter-spacing: 0.04em; }
+  .loc.here .name { color: var(--green); font-weight: 600; }
+  .loc .sub { font-size: 0.58rem; color: var(--dim); margin-top: 0.1rem; letter-spacing: 0.06em; }
+  .loc .badge-here {
+    position: absolute; top: 0.3rem; right: 0.35rem;
+    font-size: 0.5rem; letter-spacing: 0.12em; color: #031008;
+    background: var(--green); padding: 0.12rem 0.3rem;
+  }
+  .people { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.4rem; }
+  .person {
+    display: inline-flex; align-items: center; gap: 0.28rem;
+    border: 1px solid; padding: 0.12rem 0.35rem 0.12rem 0.15rem;
+    background: rgba(0,0,0,0.45); font-size: 0.62rem; color: #e8ffe8;
+    max-width: 100%;
+  }
+  .person .av {
+    width: 1.05rem; height: 1.05rem; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.52rem; font-weight: 700; color: #031008; flex-shrink: 0;
+  }
+  .person .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .person.neo { box-shadow: 0 0 8px rgba(57,255,20,0.45); }
+  .person.agent { animation: pulse-agent 1.6s ease-in-out infinite; }
+  @keyframes pulse-agent {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.25); }
+  }
+
+  .focus {
+    margin-top: 0.75rem; border: 1px solid var(--line); padding: 0.65rem 0.75rem;
+    background: rgba(0,0,0,0.35); display: grid; grid-template-columns: 1.1fr 1fr; gap: 0.75rem;
+  }
+  @media (max-width: 720px) { .focus { grid-template-columns: 1fr; } }
+  .focus .k { font-size: 0.58rem; letter-spacing: 0.16em; color: var(--dim); }
+  .focus .title { font-size: 1rem; color: var(--green); margin: 0.2rem 0 0.35rem; }
+  .focus .blurb { font-size: 0.72rem; color: var(--mute); line-height: 1.4; }
+  .focus .who-list { display: flex; flex-direction: column; gap: 0.3rem; }
+  .focus .row { display:flex; align-items:center; gap:0.45rem; font-size:0.75rem; color:var(--soft); }
+  .focus .row .dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .focus .empty { color: var(--dim); font-size: 0.75rem; }
+
+  .legend { display:flex; flex-wrap:wrap; gap:0.85rem; font-size:0.68rem; color:var(--dim); margin-top:0.65rem; }
+  .legend b { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:0.3rem; vertical-align: middle; }
+  .legend .n { background: var(--zion); } .legend .a { background: var(--agents); } .legend .s { background: var(--sys); }
+
+  #feed { height: min(52vh, 520px); overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; padding-right: 0.25rem; }
+  .msg { border-left: 3px solid var(--line); padding: 0.4rem 0.6rem; background: rgba(0,0,0,0.25); }
+  .msg.scene { border-left-color: var(--warn); color: var(--warn); font-size: 0.76rem; letter-spacing: 0.05em; }
+  .msg.speak { border-left-color: var(--green); }
+  .msg .who { font-size: 0.65rem; letter-spacing: 0.14em; color: var(--dim); margin-bottom: 0.2rem; text-transform: uppercase; }
+  .msg .txt { color: var(--soft); font-size: 0.86rem; line-height: 1.45; white-space: pre-wrap; word-break: break-word; }
+  .msg.sys .txt { color: var(--mute); font-size: 0.78rem; }
+
+  .bottom { display: grid; grid-template-columns: 1.2fr 1fr; gap: 0.8rem; margin-top: 0.8rem; }
+  @media (max-width: 960px) { .bottom { grid-template-columns: 1fr; } }
+  .flags { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .flag { border: 1px solid var(--line); padding: 0.55rem 0.65rem; }
+  .flag.on { border-color: var(--green); box-shadow: inset 0 0 0 1px rgba(57,255,20,0.15); }
+  .flag .k { font-size: 0.58rem; letter-spacing: 0.16em; color: var(--dim); }
+  .flag .v { margin-top: 0.2rem; font-size: 0.9rem; color: var(--soft); }
+  .tug .track { display: flex; height: 10px; background: #07150c; margin: 0.55rem 0 0.35rem; overflow: hidden; }
+  .tug .zion { background: var(--zion); height: 100%; }
+  .tug .scores { display:flex; justify-content:space-between; font-size:0.72rem; color:var(--mute); }
+  .pills { display:flex; flex-wrap:wrap; gap:0.3rem; margin-top:0.65rem; }
+  .pill { border: 1px solid var(--line); padding: 0.18rem 0.45rem; font-size: 0.65rem; color: var(--mute); }
+  
+  .hitl-box { border: 1px solid var(--warn); background: rgba(40,30,0,0.55); padding: 0.75rem 0.9rem; margin-bottom: 0.85rem; }
+  .hitl-box .k { color: var(--warn); font-size: 0.62rem; letter-spacing: 0.16em; }
+  .hitl-box .msg { color: var(--soft); margin: 0.35rem 0 0.55rem; font-size: 0.85rem; }
+  .hitl-box .btns { display:flex; flex-wrap:wrap; gap:0.4rem; }
+  .hitl-box button, .toolbar button {
+    background: #041008; color: var(--green); border: 1px solid var(--line);
+    font-family: inherit; font-size: 0.75rem; padding: 0.35rem 0.65rem; cursor: pointer;
+  }
+  .hitl-box button:hover, .toolbar button:hover { border-color: var(--green); }
+  .toolbar { display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom: 0.85rem; align-items:center; }
+  .toolbar .seat { color: var(--mute); font-size: 0.72rem; margin-right: 0.5rem; }
+  .metrics { display:grid; grid-template-columns: repeat(4,1fr); gap:0.5rem; margin-bottom:0.85rem; }
+  @media (max-width:720px){ .metrics { grid-template-columns: 1fr 1fr; } }
+  .metrics .m { border:1px solid var(--line); padding:0.5rem 0.65rem; background:var(--panel); }
+  .metrics .m .k { font-size:0.55rem; color:var(--dim); letter-spacing:0.12em; }
+  .metrics .m .v { font-size:1.05rem; color:var(--soft); margin-top:0.15rem; }
+  .replay-bar { display:flex; gap:0.4rem; flex-wrap:wrap; align-items:center; margin-top:0.55rem; }
+  .replay-bar select { background:#041008; color:var(--soft); border:1px solid var(--line); font-family:inherit; font-size:0.72rem; padding:0.25rem; }
+
+  footer { margin-top: 0.9rem; font-size: 0.65rem; color: var(--dim); letter-spacing: 0.06em; }
+</style>
+</head>
+<body>
+<canvas id="rain" aria-hidden="true"></canvas>
+<div class="shell">
+  <header class="hero">
+    <h1 class="brand">THE MATRIX</h1>
+    <div class="now">
+      <div class="label">NOW PLAYING</div>
+      <div class="scene" id="scene">Standby</div>
+      <div class="where" id="where">Waiting for jack-in…</div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:0.4rem; align-items:flex-end;">
+      <div class="cycle-badge">
+        <span class="n" id="cycle">—</span>
+        <span class="l">CYCLE</span>
+      </div>
+      <div class="live-pill" id="live-pill"><span class="dot"></span><span id="live-lbl">CONNECTING</span></div>
+    </div>
+  </header>
+
+
+  <div class="toolbar">
+    <span class="seat">SEAT · <strong id="seat-lbl">operator</strong></span>
+    <button type="button" data-seat="neo">Neo</button>
+    <button type="button" data-seat="trinity">Trinity</button>
+    <button type="button" data-seat="operator">Operator</button>
+    <button type="button" id="btn-tts">TTS on</button>
+    <button type="button" data-preset="fast">Preset fast</button>
+    <button type="button" data-preset="balanced">balanced</button>
+    <button type="button" data-preset="cinematic">cinematic</button>
+    <button type="button" data-preset="tiny">tiny</button>
+    <button type="button" id="btn-move" title="Move Neo into selected sector">Move</button>
+    <button type="button" id="btn-linger">Linger</button>
+    <button type="button" id="btn-hardline">Hardline</button>
+    <button type="button" id="btn-tap">Tap</button>
+    <button type="button" id="btn-cctv">CCTV</button>
+    <button type="button" id="btn-emp">EMP</button>
+    <button type="button" id="btn-jack">Jack-out</button>
+    <button type="button" id="btn-skill">Load skill</button>
+  </div>
+  <div class="hitl-box" id="hitl-box" hidden>
+    <div class="k">OPERATOR DECISION</div>
+    <div class="msg" id="hitl-msg">—</div>
+    <div class="btns" id="hitl-btns"></div>
+  </div>
+  <div class="metrics" id="metrics"></div>
+
+  <section class="glance">
+    <div class="chip">
+      <div class="k">WHERE</div>
+      <div class="v" id="g-where">—</div>
+      <div class="h" id="g-where-h">Neo's current sector</div>
+    </div>
+    <div class="chip">
+      <div class="k">DANGER</div>
+      <div class="v" id="g-danger">Calm</div>
+      <div class="h" id="g-danger-h">Threat + Agent proximity</div>
+    </div>
+    <div class="chip">
+      <div class="k">SYSTEM INTENT</div>
+      <div class="v" id="g-meta">—</div>
+      <div class="h" id="g-meta-h">Architect vs Oracle meta-policy</div>
+    </div>
+  </section>
+
+  <section class="chip" style="margin-bottom:0.85rem; padding:0.65rem 0.9rem;">
+    <div class="k">PARALLEL TRACKS</div>
+    <div class="h" id="g-tracks" style="margin-top:0.35rem; color:var(--soft);">Waiting for fan-out…</div>
+  </section>
+
+  <section class="meters">
+    <div class="meter">
+      <label><span>TRACE</span><span id="m-trace-lbl">safe</span></label>
+      <div class="val" id="m-trace">0</div>
+      <div class="bar" id="b-trace"><i></i></div>
+      <div class="hint">Agent attention on Neo (0–100)</div>
+    </div>
+    <div class="meter">
+      <label><span>THREAT</span><span id="m-threat-lbl">low</span></label>
+      <div class="val" id="m-threat">0</div>
+      <div class="bar" id="b-threat"><i></i></div>
+      <div class="hint">Systemic heat (1–10)</div>
+    </div>
+    <div class="meter">
+      <label><span>TRAINING</span><span>skill</span></label>
+      <div class="val" id="m-train">0</div>
+      <div class="bar" id="b-train"><i></i></div>
+      <div class="hint">Construct + code vision score</div>
+    </div>
+    <div class="meter">
+      <label><span>WORLD TICK</span><span>clock</span></label>
+      <div class="val" id="m-tick">0</div>
+      <div class="bar" id="b-tick"><i style="width:100%;opacity:.35"></i></div>
+      <div class="hint">City simulation pulses this life</div>
+    </div>
+  </section>
+
+  <section class="grid">
+    <div class="panel">
+      <div class="map-head">
+        <h2>Mega City · live sectors</h2>
+        <div class="map-hint">Click sector · Move / Hardline / EMP in toolbar · red glow = Agent hunt path</div>
+      </div>
+      <div class="map-board" id="map-board"></div>
+      <div class="focus" id="focus">
+        <div>
+          <div class="k">SELECTED SECTOR</div>
+          <div class="title" id="focus-title">—</div>
+          <div class="blurb" id="focus-blurb">Waiting for signal…</div>
+        </div>
+        <div>
+          <div class="k">WHO IS HERE</div>
+          <div class="who-list" id="focus-who"><div class="empty">—</div></div>
+        </div>
+      </div>
+      <div class="legend">
+        <span><b class="n"></b>Zion crew</span>
+        <span><b class="a"></b>Agents</span>
+        <span><b class="s"></b>Programs</span>
+      </div>
+
+      <div class="replay-bar">
+        <span style="font-size:0.62rem;color:var(--dim);letter-spacing:0.12em">REPLAY</span>
+        <select id="replay-sel"><option value="">— live —</option></select>
+        <button type="button" id="replay-play">Play</button>
+        <button type="button" id="replay-stop">Live</button>
+      </div>
+
+    </div>
+    <div class="panel">
+      <h2>Story feed · latest beats</h2>
+      <div id="feed"></div>
+    </div>
+  </section>
+
+  <section class="bottom">
+    <div class="panel">
+      <h2>Mission flags</h2>
+      <div class="flags" id="flags"></div>
+      <div class="pills" id="physics"></div>
+    </div>
+    <div class="panel tug">
+      <h2>Faction tug-of-war</h2>
+      <div class="track"><div class="zion" id="zion-bar" style="width:50%"></div></div>
+      <div class="scores">
+        <span>Zion <strong id="zion-s">0</strong></span>
+        <span>Agents <strong id="agents-s">0</strong></span>
+      </div>
+      <div class="flags" style="margin-top:0.75rem" id="extra"></div>
+    </div>
+  </section>
+
+  <footer>Operator Console · live poll 1s · http://127.0.0.1:%PORT% · uv run matrix-jack-in</footer>
+</div>
+<script>
+/* —— Digital rain (Matrix code) —— */
+(function startRain() {
+  const canvas = document.getElementById('rain');
+  const ctx = canvas.getContext('2d');
+  const glyphs =
+    'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789<>*+-=:THEMATRIXNEO';
+  let cols = [];
+  let fontSize = 16;
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    fontSize = Math.max(14, Math.floor(canvas.width / 90));
+    const n = Math.ceil(canvas.width / fontSize);
+    cols = Array.from({ length: n }, () => ({
+      y: Math.random() * canvas.height,
+      speed: 0.6 + Math.random() * 1.8,
+      trail: 8 + Math.floor(Math.random() * 18),
+    }));
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function frame() {
+    ctx.fillStyle = 'rgba(1, 3, 2, 0.08)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.font = fontSize + 'px monospace';
+    for (let i = 0; i < cols.length; i++) {
+      const col = cols[i];
+      const x = i * fontSize;
+      for (let t = 0; t < col.trail; t++) {
+        const gy = col.y - t * fontSize;
+        if (gy < -fontSize || gy > canvas.height) continue;
+        const ch = glyphs[(i * 17 + t * 3 + Math.floor(col.y / fontSize)) % glyphs.length];
+        const bright = t === 0;
+        ctx.fillStyle = bright
+          ? 'rgba(180, 255, 180, 0.95)'
+          : `rgba(57, 255, 20, ${Math.max(0.08, 0.55 - t * 0.03)})`;
+        ctx.fillText(ch, x, gy);
+      }
+      col.y += col.speed * fontSize * 0.35;
+      if (col.y - col.trail * fontSize > canvas.height) {
+        col.y = -Math.random() * canvas.height * 0.3;
+        col.speed = 0.6 + Math.random() * 1.8;
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  // Seed dark backdrop once
+  ctx.fillStyle = '#010302';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  requestAnimationFrame(frame);
+})();
+
+const META = {
+  real_world: { name: 'Real World', icon: '🌑', zone: 'out', blurb: 'Zion / machine war — outside the simulation.' },
+  construct: { name: 'Construct', icon: '⬜', zone: 'out', blurb: 'White loading program — sparring & training.' },
+  nebuchadnezzar: { name: 'Nebuchadnezzar', icon: '🚢', zone: 'out', blurb: 'Hovercraft ops — Tank, Morpheus, Cypher.' },
+  oracle_apartment: { name: 'Oracle', icon: '🍪', zone: 'city', blurb: 'Cookies, prophecy, spoon boy.' },
+  cafe: { name: 'Cafe', icon: '☕', zone: 'city', blurb: 'Architect / system rendezvous.' },
+  rooftop: { name: 'Rooftop', icon: '🏙️', zone: 'city', blurb: 'Leap of faith. High extraction risk.' },
+  apartment: { name: 'Apartment', icon: '🏠', zone: 'city', blurb: 'Neo\'s unit. Quiet… until it isn\'t.' },
+  subway: { name: 'Subway', icon: '🚇', zone: 'city', blurb: 'Showdown tunnels. Agents love this.' },
+  highway: { name: 'Highway', icon: '🛣️', zone: 'city', blurb: 'High-speed chase corridor.' },
+  jack_point: { name: 'Jack-in', icon: '🔌', zone: 'city', blurb: 'Hardline entry / exit phone.' },
+  club: { name: 'Club', icon: '🪩', zone: 'city', blurb: 'Night contact — Trinity\'s turf.' },
+  hotel_lobby: { name: 'Lobby', icon: '🏨', zone: 'city', blurb: 'Bullet-time lobby. Hot extraction.' },
+  club_vip: { name: 'VIP', icon: '🍷', zone: 'city', blurb: 'Merovingian causality salon.' },
+  keymaker_hall: { name: 'Keys', icon: '🔑', zone: 'city', blurb: 'Every door is a decision.' },
+  zion_dock: { name: 'Zion Dock', icon: '⚓', zone: 'out', blurb: 'Home under the earth.' },
+};
+
+const CITY_ORDER = [
+  'oracle_apartment', 'cafe', 'rooftop',
+  'apartment', 'subway', 'highway',
+  'jack_point', 'club', 'hotel_lobby',
+  'club_vip', 'keymaker_hall',
+];
+const OUT_ORDER = ['real_world', 'construct', 'nebuchadnezzar', 'zion_dock'];
+const AGENTS = new Set(['smith', 'jones', 'brown']);
+
+let selectedLoc = null;
+let lastData = null;
+let lastSeq = -1;
+let lastFeedLen = -1;
+let lastLocKey = '';
+
+function prettyLoc(id) {
+  if (!id) return '—';
+  return (META[id] && META[id].name) || String(id).replace(/_/g, ' ');
+}
+
+function fixSpaces(s) {
+  let t = String(s || '');
+  t = t.replace(/([a-z])([A-Z])/g, '$1 $2');
+  t = t.replace(/([A-Za-z])(\d)/g, '$1 $2');
+  t = t.replace(/([.!?])([A-Za-z])/g, '$1 $2');
+  t = t.replace(/\b(ACTION|SAY|LEARN)\s*:/gi, '');
+  return t.replace(/\s{2,}/g, ' ').trim();
+}
+
+function bar(el, pct, mode) {
+  const i = el.querySelector('i');
+  i.style.width = Math.max(0, Math.min(100, pct)) + '%';
+  el.classList.toggle('hot', mode === 'hot');
+  el.classList.toggle('warn', mode === 'warn');
+}
+
+function styleOf(who, styles) {
+  return styles[who] || { color: '#39FF14', short: who.slice(0, 1).toUpperCase(), label: who, faction: 'zion' };
+}
+
+function groupByLoc(positions) {
+  const by = {};
+  for (const [who, where] of Object.entries(positions || {})) {
+    (by[where] ||= []).push(who);
+  }
+  for (const k of Object.keys(by)) {
+    by[k].sort((a, b) => {
+      if (a === 'neo') return -1;
+      if (b === 'neo') return 1;
+      if (AGENTS.has(a) !== AGENTS.has(b)) return AGENTS.has(a) ? -1 : 1;
+      return a.localeCompare(b);
+    });
+  }
+  return by;
+}
+
+function personChip(who, styles) {
+  const st = styleOf(who, styles);
+  const cls = [
+    'person',
+    who === 'neo' ? 'neo' : '',
+    AGENTS.has(who) ? 'agent' : '',
+  ].filter(Boolean).join(' ');
+  return `<span class="${cls}" style="border-color:${st.color}" title="${st.label || who}">
+    <span class="av" style="background:${st.color}">${escapeHtml(st.short || '?')}</span>
+    <span class="nm">${escapeHtml(st.label || who)}</span>
+  </span>`;
+}
+
+function renderFocus(locId, byLoc, styles) {
+  const meta = META[locId] || { name: prettyLoc(locId), blurb: '' };
+  const people = byLoc[locId] || [];
+  document.getElementById('focus-title').textContent = meta.name;
+  document.getElementById('focus-blurb').textContent = meta.blurb || '';
+  const box = document.getElementById('focus-who');
+  if (!people.length) {
+    box.innerHTML = '<div class="empty">Sector empty</div>';
+    return;
+  }
+  box.innerHTML = people.map(who => {
+    const st = styleOf(who, styles);
+    const role = AGENTS.has(who) ? 'Agent' : (st.faction === 'system' ? 'Program' : 'Zion');
+    return `<div class="row"><span class="dot" style="background:${st.color}"></span>
+      <strong>${escapeHtml(st.label || who)}</strong>
+      <span style="color:var(--dim);font-size:0.65rem">${role}</span></div>`;
+  }).join('');
+}
+
+function tileHtml(id, neoLoc, byLoc, styles, selected, huntSet, heatMap) {
+  const meta = META[id] || { name: prettyLoc(id), icon: '•', blurb: '' };
+  const people = byLoc[id] || [];
+  const here = id === neoLoc;
+  const hasAgent = people.some(p => AGENTS.has(p));
+  const onHunt = huntSet && huntSet.has(id);
+  const heat = Number((heatMap || {})[id] || 0);
+  const classes = [
+    'loc',
+    here ? 'here' : '',
+    hasAgent ? 'danger' : '',
+    onHunt ? 'hunt' : '',
+    people.length ? '' : 'empty',
+    selected === id ? 'here' : '',
+  ].filter(Boolean).join(' ');
+  const chips = people.length
+    ? `<div class="people">${people.map(w => personChip(w, styles)).join('')}</div>`
+    : `<div class="sub" style="margin-top:0.45rem">empty</div>`;
+  const heatLbl = heat >= 1 ? `<span class="heat">HEAT ${heat.toFixed(0)}</span>` : '';
+  return `<div class="${classes}" data-loc="${id}" role="button" tabindex="0">
+    ${heatLbl}
+    ${here ? '<span class="badge-here">YOU</span>' : ''}
+    <div class="ico">${meta.icon}</div>
+    <div class="name">${escapeHtml(meta.name)}</div>
+    <div class="sub">${people.length ? people.length + ' present' : 'clear'}${hasAgent ? ' · AGENT' : ''}${onHunt ? ' · HUNT' : ''}</div>
+    ${chips}
+  </div>`;
+}
+
+function drawMap(data) {
+  const neoLoc = data.location || '';
+  const styles = data.cast_style || {};
+  const byLoc = groupByLoc(data.agent_positions || {});
+  const hunt = data.hunt_path || [];
+  const huntSet = new Set(hunt);
+  const heatMap = data.sector_heat || {};
+  if (!selectedLoc) selectedLoc = neoLoc || 'apartment';
+
+  const locKey = neoLoc + '|' + JSON.stringify(data.agent_positions || {}) + '|' + selectedLoc
+    + '|' + hunt.join('>') + '|' + JSON.stringify(heatMap);
+  if (locKey === lastLocKey && document.getElementById('map-board').children.length) {
+    renderFocus(selectedLoc, byLoc, styles);
+    return;
+  }
+  lastLocKey = locKey;
+
+  const outHot = OUT_ORDER.some(id => id === neoLoc);
+  const cityHot = CITY_ORDER.some(id => id === neoLoc);
+
+  const board = document.getElementById('map-board');
+  board.innerHTML = `
+    <div class="zone${outHot ? ' hot' : ''}">
+      <div class="zone-title"><span>OUTSIDE · SHIP / REAL</span><span class="tag">exfil layer</span></div>
+      <div class="zone-grid out">${OUT_ORDER.map(id => tileHtml(id, neoLoc, byLoc, styles, selectedLoc, huntSet, heatMap)).join('')}</div>
+    </div>
+    <div class="zone${cityHot ? ' hot' : ''}">
+      <div class="zone-title"><span>MEGA CITY · INSIDE</span><span class="tag">simulation grid</span></div>
+      <div class="zone-grid city">${CITY_ORDER.map(id => tileHtml(id, neoLoc, byLoc, styles, selectedLoc, huntSet, heatMap)).join('')}</div>
+    </div>`;
+
+  board.querySelectorAll('.loc').forEach(el => {
+    el.addEventListener('click', () => {
+      selectedLoc = el.dataset.loc;
+      window._userPinned = true;
+      setTimeout(() => { window._userPinned = false; }, 8000);
+      lastLocKey = '';
+      drawMap(lastData || data);
+    });
+    el.addEventListener('dblclick', () => {
+      selectedLoc = el.dataset.loc;
+      sendCommand('move', selectedLoc);
+    });
+  });
+
+  renderFocus(selectedLoc, byLoc, styles);
+  const cd = data.hardline_cooldown || 0;
+  const taps = (data.phone_taps || []).length;
+  const huntLbl = hunt.length ? hunt.join(' → ') : '—';
+  const hint = document.querySelector('.map-hint');
+  if (hint) {
+    hint.textContent = `Hunt: ${huntLbl} · Hardline CD ${cd} · Taps ${taps} · dbl-click tile to move`;
+  }
+}
+
+function parseFeedLine(raw) {
+  const s = fixSpaces(raw);
+  if (/^══/.test(s) || /^→/.test(s) || /ACT\s/i.test(s) || /^═/.test(s)) {
+    return { kind: 'scene', who: 'SCENE', txt: s.replace(/^══\s*|\s*══$/g, '').replace(/^═+|═+$/g, '').trim() };
+  }
+  const m = s.match(/^([^:]{2,40}):\s*[""]?([\s\S]*)[""]?$/);
+  if (m) {
+    return { kind: 'speak', who: m[1].trim(), txt: fixSpaces(m[2].replace(/^["']|["']$/g, '')) };
+  }
+  return { kind: 'sys', who: 'SYS', txt: s };
+}
+
+function dangerLevel(trace, threat, positions, loc) {
+  let near = 0;
+  for (const [who, where] of Object.entries(positions || {})) {
+    if (AGENTS.has(who) && where === loc) near += 1;
+  }
+  const score = Number(trace || 0) / 20 + Number(threat || 0) + near * 2;
+  if (score >= 10) return ['CRITICAL', 'Agents locking on — extract soon'];
+  if (score >= 6) return ['ELEVATED', 'Heat rising in this sector'];
+  if (score >= 3) return ['WATCH', 'Routine patrol pressure'];
+  return ['CALM', 'Low Agent attention'];
+}
+
+function setLive(ok, data) {
+  const pill = document.getElementById('live-pill');
+  const lbl = document.getElementById('live-lbl');
+  pill.classList.toggle('on', ok);
+  pill.classList.toggle('err', !ok);
+  if (!ok) { lbl.textContent = 'LINK DOWN'; return; }
+  const age = data && data.updated_at
+    ? Math.max(0, Math.round(Date.now() / 1000 - Number(data.updated_at)))
+    : null;
+  const scene = (data && (data.scene || data.status)) || 'idle';
+  lbl.textContent = age === null ? 'LIVE' : `LIVE · ${age}s · ${String(scene).replace(/_/g, ' ').slice(0, 24)}`;
+}
+
+function render(data) {
+  const seq = Number(data.seq || 0);
+  const force = seq !== lastSeq;
+  lastSeq = seq;
+  lastData = data;
+
+  setLive(true, data);
+
+  const scene = data.scene || data.status || 'standby';
+  const loc = data.location || '';
+  document.getElementById('scene').textContent = String(scene).replace(/_/g, ' ');
+  document.getElementById('where').textContent =
+    loc ? ('Location: ' + prettyLoc(loc)) : (data.hint || 'Waiting for jack-in…');
+  document.getElementById('cycle').textContent = data.cycle ?? '—';
+  document.getElementById('g-where').textContent = prettyLoc(loc);
+
+  const hereNow = Object.entries(data.agent_positions || {})
+    .filter(([, w]) => w === loc).map(([n]) => (data.cast_style?.[n]?.label) || n);
+  document.getElementById('g-where-h').textContent = hereNow.length
+    ? ('With Neo: ' + hereNow.join(', '))
+    : 'Neo alone in this sector';
+
+  const [dang, dangH] = dangerLevel(data.trace, data.threat, data.agent_positions, loc);
+  document.getElementById('g-danger').textContent = dang;
+  document.getElementById('g-danger-h').textContent = dangH;
+  document.getElementById('g-meta').textContent = data.meta || 'balancing';
+  document.getElementById('g-meta-h').textContent =
+    data.co_human ? ('Co-pilot: ' + data.co_human) : 'Oracle / Architect negotiation';
+  const tracks = data.tracks || [];
+  document.getElementById('g-tracks').textContent = tracks.length
+    ? tracks.map(t => '∥ ' + String(t)).join('   ·   ')
+    : 'Single path (or waiting for parallel fan-out)';
+
+  const trace = Number(data.trace || 0);
+  const threat = Number(data.threat || 0);
+  const train = Number(data.training_score || 0);
+  const tick = Number(data.world_tick || 0);
+  document.getElementById('m-trace').textContent = trace.toFixed(1);
+  document.getElementById('m-threat').textContent = threat;
+  document.getElementById('m-train').textContent = train;
+  document.getElementById('m-tick').textContent = tick;
+  document.getElementById('m-trace-lbl').textContent = trace >= 70 ? 'hot' : trace >= 40 ? 'rising' : 'safe';
+  document.getElementById('m-threat-lbl').textContent = threat >= 7 ? 'high' : threat >= 4 ? 'mid' : 'low';
+  bar(document.getElementById('b-trace'), trace, trace >= 70 ? 'hot' : trace >= 40 ? 'warn' : '');
+  bar(document.getElementById('b-threat'), threat * 10, threat >= 7 ? 'hot' : threat >= 4 ? 'warn' : '');
+  bar(document.getElementById('b-train'), Math.min(100, train * 8), '');
+
+  if (loc && !window._userPinned) selectedLoc = loc;
+  drawMap(data);
+
+  const feed = document.getElementById('feed');
+  const lines = data.feed || [];
+  if (force || lines.length !== lastFeedLen) {
+    lastFeedLen = lines.length;
+    const nearBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 80;
+    if (!lines.length) {
+      feed.innerHTML = `<div class="msg sys"><div class="who">SYS</div><div class="txt">${escapeHtml(data.hint || 'Waiting for signal…')}</div></div>`;
+    } else {
+      feed.innerHTML = lines.slice(-40).map(raw => {
+        const p = parseFeedLine(raw);
+        return `<div class="msg ${p.kind}"><div class="who">${escapeHtml(p.who)}</div><div class="txt">${escapeHtml(p.txt)}</div></div>`;
+      }).join('');
+      if (nearBottom) feed.scrollTop = feed.scrollHeight;
+    }
+  }
+
+  const sticky = data.sticky || {};
+  const stickyOn = Object.keys(sticky).filter(k => sticky[k]);
+  const flags = [
+    ['Awakened', data.awakened ? 'YES' : 'no', !!data.awakened],
+    ['Pill', data.pill || 'not chosen', !!data.pill],
+    ['Pursuit', data.pursuit_status || 'idle', data.pursuit_status === 'chasing'],
+    ['Showdown', data.showdown_status || '—', data.showdown_status === 'won'],
+  ];
+  document.getElementById('flags').innerHTML = flags.map(([k, v, on]) =>
+    `<div class="flag${on ? ' on' : ''}"><div class="k">${k}</div><div class="v">${escapeHtml(String(v))}</div></div>`
+  ).join('');
+
+  document.getElementById('extra').innerHTML = [
+    ['Human', data.human_id || 'neo'],
+    ['Sticky', stickyOn.join(', ') || 'none'],
+    ['Outcome', data.outcome ? String(data.outcome).slice(0, 80) : 'in progress'],
+  ].map(([k, v]) =>
+    `<div class="flag"><div class="k">${k}</div><div class="v">${escapeHtml(String(v))}</div></div>`
+  ).join('');
+
+  const score = data.faction_scoreboard || {};
+  const z = Number(score.zion || 0);
+  const a = Number(score.agents || 0);
+  const tot = Math.max(1, z + a);
+  document.getElementById('zion-s').textContent = z;
+  document.getElementById('agents-s').textContent = a;
+  document.getElementById('zion-bar').style.width = ((z / tot) * 100) + '%';
+
+  document.getElementById('physics').innerHTML = (data.physics || []).map(p =>
+    `<span class="pill">${escapeHtml(String(p).replace(/_/g, ' '))}</span>`
+  ).join('');
+
+  renderHitl(data.hitl);
+  maybeSpeak(data.feed || []);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[c]);
+}
+
+const params = new URLSearchParams(location.search);
+let seat = params.get('seat') || localStorage.getItem('matrix_seat') || 'operator';
+let ttsOn = (localStorage.getItem('matrix_tts') || '1') !== '0';
+let lastSpoken = '';
+let replayTimer = null;
+
+function setSeat(s) {
+  seat = s;
+  localStorage.setItem('matrix_seat', s);
+  document.getElementById('seat-lbl').textContent = s;
+  history.replaceState({}, '', '/?seat=' + encodeURIComponent(s));
+}
+document.getElementById('seat-lbl').textContent = seat;
+document.querySelectorAll('[data-seat]').forEach(btn => {
+  btn.addEventListener('click', () => setSeat(btn.dataset.seat));
+});
+document.querySelectorAll('[data-preset]').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    await fetch('/api/preset', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name: btn.dataset.preset})
+    });
+  });
+});
+
+async function sendCommand(command, target) {
+  try {
+    const r = await fetch('/api/command', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ command, target: target || selectedLoc || '', seat })
+    });
+    const out = await r.json();
+    if (!out.ok && out.error) {
+      const feed = document.getElementById('feed');
+      if (feed) {
+        const d = document.createElement('div');
+        d.className = 'msg sys';
+        d.textContent = 'CMD blocked: ' + out.error;
+        feed.appendChild(d);
+      }
+    }
+  } catch (e) {}
+}
+document.getElementById('btn-move')?.addEventListener('click', () => sendCommand('move', selectedLoc));
+document.getElementById('btn-linger')?.addEventListener('click', () => sendCommand('linger'));
+document.getElementById('btn-hardline')?.addEventListener('click', () => sendCommand('hardline'));
+document.getElementById('btn-tap')?.addEventListener('click', () => sendCommand('tap', selectedLoc));
+document.getElementById('btn-cctv')?.addEventListener('click', () => sendCommand('cctv', selectedLoc));
+document.getElementById('btn-emp')?.addEventListener('click', () => sendCommand('emp'));
+document.getElementById('btn-jack')?.addEventListener('click', () => sendCommand('jack_out'));
+document.getElementById('btn-skill')?.addEventListener('click', () => sendCommand('load_skill', 'jujitsu'));
+const btnTts = document.getElementById('btn-tts');
+btnTts.textContent = ttsOn ? 'TTS on' : 'TTS off';
+btnTts.addEventListener('click', () => {
+  ttsOn = !ttsOn;
+  localStorage.setItem('matrix_tts', ttsOn ? '1' : '0');
+  btnTts.textContent = ttsOn ? 'TTS on' : 'TTS off';
+  if (!ttsOn) {
+    if (window.speechSynthesis) speechSynthesis.cancel();
+    fetch('/api/speak', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({stop: true})
+    }).catch(() => {});
+  }
+});
+
+/* ---- Human-like voice layer ---- */
+let voiceCache = [];
+function refreshVoices() {
+  if (!window.speechSynthesis) return;
+  voiceCache = speechSynthesis.getVoices() || [];
+}
+if (window.speechSynthesis) {
+  refreshVoices();
+  speechSynthesis.onvoiceschanged = refreshVoices;
+}
+
+const VOICE_PREFS = {
+  neo: { voices: ['Alex','Daniel','Google US English','Microsoft Guy','Samantha'], rate: 0.95, pitch: 0.98, gender: 'male' },
+  trinity: { voices: ['Samantha','Allison','Ava','Karen','Google UK English Female','Microsoft Aria'], rate: 1.0, pitch: 1.08, gender: 'female' },
+  morpheus: { voices: ['Daniel','Alex','Oliver','Google UK English Male'], rate: 0.88, pitch: 0.82, gender: 'male' },
+  smith: { voices: ['Daniel','Alex','Microsoft Guy','Google UK English Male'], rate: 0.9, pitch: 0.72, gender: 'male' },
+  'agent smith': { voices: ['Daniel','Alex','Microsoft Guy'], rate: 0.9, pitch: 0.72, gender: 'male' },
+  oracle: { voices: ['Karen','Moira','Fiona','Samantha','Microsoft Susan'], rate: 0.9, pitch: 1.12, gender: 'female' },
+  architect: { voices: ['Daniel','Oliver','Alex','Microsoft Guy'], rate: 0.85, pitch: 0.68, gender: 'male' },
+  'spoon boy': { voices: ['Junior','Samantha','Google US English'], rate: 1.08, pitch: 1.25, gender: 'child' },
+  merovingian: { voices: ['Thomas','Daniel','Alex'], rate: 0.95, pitch: 0.88, gender: 'male' },
+  keymaker: { voices: ['Alex','Daniel'], rate: 0.87, pitch: 0.85, gender: 'male' },
+  niobe: { voices: ['Samantha','Karen','Moira'], rate: 0.98, pitch: 1.05, gender: 'female' },
+  operator: { voices: ['Samantha','Alex','Google US English'], rate: 0.98, pitch: 1.0, gender: 'neutral' },
+};
+
+function voicePrefsFor(who) {
+  const key = String(who || '').toLowerCase().replace(/^agent\s+/, '').replace(/\s*\(.*\)$/, '').trim();
+  if (VOICE_PREFS[key]) return VOICE_PREFS[key];
+  for (const [k, v] of Object.entries(VOICE_PREFS)) {
+    if (key.includes(k) || k.includes(key)) return v;
+  }
+  return VOICE_PREFS.operator;
+}
+
+function scoreVoice(v, prefs) {
+  const name = `${v.name} ${v.voiceURI || ''}`.toLowerCase();
+  let score = 0;
+  // Prefer natural / enhanced / premium / neural over compact/robotic
+  if (/premium|enhanced|neural|natural|super|quality|online/.test(name)) score += 40;
+  if (/compact|eloquence|novelty|whisper|zarvox|trinoids|bad\s*news|cellos|boing|bubbles|deranged|good\s*news|hysterical|pipe\s*organ|ralph|albert|bahh|bells|boing|frogs|junior|kathy|princess|zarvox/.test(name)) score -= 50;
+  if (/fred|robot|dummy/.test(name)) score -= 80;
+  prefs.voices.forEach((pref, i) => {
+    if (name.includes(pref.toLowerCase())) score += 30 - i * 2;
+  });
+  const lang = (v.lang || '').toLowerCase();
+  if (lang.startsWith('en')) score += 15;
+  if (lang.startsWith('en-us') || lang.startsWith('en_us')) score += 8;
+  if (prefs.gender === 'female' && /(female|samantha|karen|moira|allison|ava|susan|fiona|aria|zira|jenny)/.test(name)) score += 12;
+  if (prefs.gender === 'male' && /(male|alex|daniel|tom|oliver|david|mark|guy|reed)/.test(name)) score += 12;
+  if (v.localService) score += 5;
+  return score;
+}
+
+function pickBrowserVoice(who, hints) {
+  refreshVoices();
+  const prefs = hints && hints.preferred_voices
+    ? { voices: hints.preferred_voices, rate: hints.rate, pitch: hints.pitch, gender: hints.gender || 'neutral' }
+    : voicePrefsFor(who);
+  if (!voiceCache.length) return { voice: null, prefs };
+  let best = null;
+  let bestScore = -1e9;
+  for (const v of voiceCache) {
+    const s = scoreVoice(v, prefs);
+    if (s > bestScore) {
+      bestScore = s;
+      best = v;
+    }
+  }
+  return { voice: best, prefs };
+}
+
+function humanizeLine(text) {
+  let t = String(text || '').replace(/\s+/g, ' ').trim();
+  t = t.replace(/\bMr\.\s*/g, 'Mister ').replace(/\bMs\.\s*/g, 'Miss ').replace(/\bDr\.\s*/g, 'Doctor ');
+  t = t.replace(/\s*[—–]\s*/g, ', ').replace(/\s*;\s*/g, ', ');
+  if (t.length > 320) t = t.slice(0, 317).replace(/\s+\S*$/, '') + '…';
+  return t;
+}
+
+function speakBrowser(who, text, hints) {
+  if (!window.speechSynthesis) return;
+  const cleaned = humanizeLine(text);
+  if (!cleaned) return;
+  const { voice, prefs } = pickBrowserVoice(who, hints);
+  // Do NOT cancel — let the browser queue finish each utterance
+  const u = new SpeechSynthesisUtterance(cleaned);
+  u.lang = (hints && hints.lang) || 'en-US';
+  u.rate = Math.max(0.7, Math.min(1.15, Number(prefs.rate) || 0.95));
+  u.pitch = Math.max(0.5, Math.min(1.4, Number(prefs.pitch) || 1.0));
+  u.volume = 1.0;
+  if (voice) u.voice = voice;
+  speechSynthesis.speak(u);
+}
+
+async function speakLine(who, text) {
+  try {
+    const r = await fetch('/api/speak', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ who, text, interrupt: false })
+    });
+    const out = await r.json();
+    if (out && out.ok && out.engine === 'say') return; // queued on server
+    speakBrowser(who, text, out && out.hints);
+  } catch (_) {
+    speakBrowser(who, text, null);
+  }
+}
+
+let spokenFeedIndex = 0;
+
+function maybeSpeak(lines) {
+  if (!ttsOn || !lines || !lines.length) return;
+  // Speak every new dialogue line in order (don't skip / cut mid-sentence)
+  if (spokenFeedIndex > lines.length) spokenFeedIndex = 0;
+  for (let i = spokenFeedIndex; i < lines.length; i++) {
+    const line = lines[i];
+    const p = parseFeedLine(line);
+    if (p.kind === 'speak' && p.txt) {
+      speakLine(p.who, p.txt);
+    }
+  }
+  spokenFeedIndex = lines.length;
+  lastSpoken = lines[lines.length - 1] || lastSpoken;
+}
+
+function renderHitl(hitl) {
+  const box = document.getElementById('hitl-box');
+  if (!hitl || !hitl.kind) {
+    box.hidden = true;
+    return;
+  }
+  box.hidden = false;
+  const prefer = hitl.seat || 'operator';
+  const allowed = hitl.allowed_seats || [];
+  const seatOk = !allowed.length || allowed.includes(seat) || seat === 'operator';
+  document.getElementById('hitl-msg').textContent =
+    (`[${prefer} seat] ` + hitl.kind + ' — ' + (hitl.message || 'Choose')).slice(0, 220)
+    + (seatOk ? '' : ` · switch to ${prefer}`);
+  const btns = document.getElementById('hitl-btns');
+  btns.innerHTML = (hitl.options || []).map(opt =>
+    `<button type="button" data-choice="${escapeHtml(opt)}" ${seatOk ? '' : 'disabled'}>${escapeHtml(opt)}</button>`
+  ).join('');
+  btns.querySelectorAll('button').forEach(b => {
+    b.addEventListener('click', async () => {
+      b.disabled = true;
+      await fetch('/api/choice', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({choice: b.dataset.choice, seat})
+      });
+    });
+  });
+}
+
+async function refreshMetrics() {
+  try {
+    const r = await fetch('/api/metrics');
+    const m = await r.json();
+    const el = document.getElementById('metrics');
+    const cells = [
+      ['LIVES', m.lives_recorded],
+      ['AWAKENED', m.awakened_count],
+      ['RED / BLUE', `${m.red_pills}/${m.blue_pills}`],
+      ['FACTION', m.win_hint],
+    ];
+    el.innerHTML = cells.map(([k,v]) =>
+      `<div class="m"><div class="k">${k}</div><div class="v">${escapeHtml(String(v))}</div></div>`
+    ).join('');
+  } catch (e) {}
+}
+
+async function refreshReplays() {
+  try {
+    const r = await fetch('/api/replays');
+    const data = await r.json();
+    const sel = document.getElementById('replay-sel');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">— live —</option>' +
+      (data.replays || []).map(x =>
+        `<option value="${escapeHtml(x.id)}">c${x.cycle} · ${(x.outcome||'').toString().slice(0,40)}</option>`
+      ).join('');
+    sel.value = cur;
+  } catch (e) {}
+}
+
+document.getElementById('replay-play').addEventListener('click', async () => {
+  const id = document.getElementById('replay-sel').value;
+  if (!id) return;
+  const r = await fetch('/api/replays?id=' + encodeURIComponent(id));
+  const data = await r.json();
+  const frames = data.frames || [];
+  let i = 0;
+  if (replayTimer) clearInterval(replayTimer);
+  replayTimer = setInterval(() => {
+    if (i >= frames.length) { clearInterval(replayTimer); replayTimer = null; return; }
+    const f = frames[i++];
+    render({
+      ...data,
+      feed: frames.slice(0, i).map(x => x.line),
+      location: f.location,
+      agent_positions: f.positions,
+      threat: f.threat != null ? f.threat : data.threat,
+      trace: f.trace != null ? f.trace : data.trace,
+      sector_heat: f.sector_heat || data.sector_heat,
+      meta: f.meta || data.meta,
+      faction_scoreboard: f.faction_scoreboard || data.faction_scoreboard,
+      scene: 'replay',
+      status: 'replay',
+      seq: Date.now(),
+      hitl: null,
+    });
+  }, 700);
+});
+document.getElementById('replay-stop').addEventListener('click', () => {
+  if (replayTimer) clearInterval(replayTimer);
+  replayTimer = null;
+  load();
+});
+
+async function load() {
+  try {
+    const r = await fetch('/api/status?t=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) throw new Error('bad status');
+    render(await r.json());
+  } catch (e) {
+    setLive(false);
+    document.getElementById('scene').textContent = 'link down';
+  }
+}
+
+function connectSSE() {
+  try {
+    const es = new EventSource('/api/events');
+    es.onmessage = (ev) => {
+      try { render(JSON.parse(ev.data)); setLive(true, JSON.parse(ev.data)); }
+      catch (e) {}
+    };
+    es.onerror = () => { /* fall back to poll */ };
+  } catch (e) {}
+}
+
+load();
+connectSSE();
+setInterval(load, 2000);
+refreshMetrics();
+refreshReplays();
+setInterval(refreshMetrics, 8000);
+setInterval(refreshReplays, 15000);
+</script>
+</body>
+</html>

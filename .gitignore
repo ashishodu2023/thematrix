@@ -9,6 +9,7 @@ wheels/
 .active_thread
 .matrix_daemon.pid
 .matrix_daemon.log
+.matrix_status.json
 .pytest_cache/
 .ruff_cache/
 uv.lock

@@ -55,7 +55,10 @@ def subway_showdown(
     }
 
     if done:
-        if score >= 6:
+        from matrix.physics import showdown_win_threshold
+
+        threshold = showdown_win_threshold(state)
+        if score >= threshold:
             story.beat("Neo stands. Smith staggers. The booth light flickers.")
             update["showdown_status"] = "won"
         else:
@@ -68,16 +71,22 @@ def subway_showdown(
 
 @aware_node
 def phone_booth(state: dict) -> dict:
+    from matrix import sound as matrix_sound
+    from matrix.surveillance import use_hardline
+
     story.scene("ACT V — HARDLINE")
     story.say("Phone ringing. Exit vector locked. Fingers on metal.")
+    matrix_sound.play("phone")
     trinity = character_speak("trinity",
         "Urge Neo to pick up before Smith reaches him — one urgent sentence.",
     )
     story.speak_as("Trinity", trinity)
+    hardline = use_hardline(state) if state.get("radio_choice") == "call" else {}
     return {
         "dialogue": [f"Trinity: {trinity}"],
         "events": ["hardline:ring"],
         "log": ["[hardline] ring"],
+        **hardline,
     }
 
 

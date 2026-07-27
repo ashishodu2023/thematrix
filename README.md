@@ -1,7 +1,7 @@
 # The Matrix
 
 <p align="center">
-  <img src="docs/matrix-banner.png" alt="The Matrix — LangGraph · Ollama · Multi-Agent" width="100%" />
+  <img src="docs/matrix-banner.png" alt="The Matrix" width="100%" />
 </p>
 
 Cinematic **LangGraph** multi-agent simulation of *The Matrix*: shared world state,
@@ -9,8 +9,62 @@ Cinematic **LangGraph** multi-agent simulation of *The Matrix*: shared world sta
 agent decisions**, cross-cycle **learning memory** in Redis, interactive HITL
 jack-in, and a **continuous background daemon** that never stops until you stop it.
 
-> Terminal output uses **Matrix green on black** (`src/matrix/theme.py`).  
-> Disable with `MATRIX_NO_COLOR=1` or `NO_COLOR=1`.
+> Terminal output uses **Matrix green on black**, **vertical rain text** by default.  
+> Horizontal: `MATRIX_VERTICAL=0` · No color: `MATRIX_NO_COLOR=1`
+
+## Operator Console (recommended over terminal walls)
+
+**One command** starts the simulation backend, Operator Console, and opens **Firefox**:
+
+```bash
+uv run matrix-jack-in
+# → backend (continuous) + http://127.0.0.1:8765 + Firefox seats
+uv run matrix-jack-in --difficulty fast
+uv run matrix-jack-in --interactive   # HITL buttons in console (or matrix-resume)
+```
+
+Console features:
+
+- **NOW PLAYING** + live SSE updates + Matrix rain background  
+- **HITL buttons** when the sim pauses (Extract / Red / Trust / …)  
+- **Multi-seat** tabs (`?seat=neo|trinity|operator`) + **human TTS** (macOS `say` voices per character; browser fallback)  
+- **PARALLEL TRACKS** (Neo story ∥ Agent field)  
+- **District map** with cast chips, **Agent hunt path**, sector **HEAT**, dbl-click move  
+- **Operator tools**: Move / Linger / Hardline / Tap / CCTV / EMP / Jack-out / Load skill  
+- **Seat-aware HITL** (Neo vs Trinity vs Operator)  
+- **Replay theater 2.0** (cast moves + meters scrub) + **metrics**  
+- Mission flags + accumulating Zion vs Agents tug-of-war  
+- Expanded cast: Niobe / Persephone / Seraph + highway chase beat  
+
+Docker (Redis + app; Ollama on host):
+
+```bash
+docker compose up --build
+# console → http://127.0.0.1:8765
+```
+
+| System | Module | What it does |
+|---|---|---|
+| World clock | `tick.py` | Agents pathfind on the city graph; trace/threat drift each tick |
+| Persistent minds | `minds.py` | Redis (+ memory fallback) goals, grudges, last Neo sighting, scores |
+| Competing objectives | `objectives.py` | Zion vs Agents action scoring; lobby conflict resolution |
+| Physics / code | `physics.py` | Spoon bend, code_sight, bug, sticky flags change chase odds |
+| Surveillance | `surveillance.py` | `trace_level`, sector heat, hardline cooldowns, phone taps |
+| City graph | `city_graph.py` | Causal travel graph + BFS pathfinding |
+| Meta-game | `meta_game.py` | Architect vs Oracle negotiate `meta_policy` each life |
+| Digital rain | `rain.py` | Green glyph cascade + decoded scene titles |
+| Streaming voice | `llm.py` | Token drip + per-character temperatures + pace delays |
+| Sticky branches | `SessionMemory` | bug/trust/steak/code permanently alter later odds |
+| Multi-human | `--co-human` | Second jack-in seat (default Trinity on daemon) |
+| Sound cues | `sound.py` | Optional `afplay` (disable `MATRIX_SOUND=0`) |
+| Dashboard | `dashboard.py` | Live green status UI at `http://127.0.0.1:8765` |
+
+```bash
+uv run matrix-jack-in            # backend + console + Firefox (recommended)
+uv run matrix-jack-in --no-browser
+uv run matrix-dashboard          # console only (still opens Firefox)
+uv run matrix-daemon start       # background worker + opens Firefox when ready
+```
 
 | Piece | Role |
 |---|---|
@@ -69,7 +123,7 @@ This installs console scripts into the project venv:
 
 | Command | Purpose |
 |---|---|
-| `matrix-jack-in` | Start an interactive life (pauses at HITLs) |
+| `matrix-jack-in` | Backend + console + Firefox in one command; `--interactive` / `--no-browser` |
 | `matrix-resume` | Resume the active thread with a choice |
 | `matrix-daemon` | Continuous auto-play + learning |
 | `matrix-pull-brains` | `ollama pull` every character model |
@@ -174,6 +228,18 @@ Put these in your shell profile or prefix every `uv run` command.
 | `MATRIX_THREAT_SKIP_ORACLE` | `7` | Threat ≥ this → Architect forced to cafe (skip Oracle HITL) |
 | `MATRIX_PURSUIT_MAX_ROUNDS` | `7` | Smith chase rounds before forced escape |
 | `MATRIX_SHOWDOWN_MAX_ROUNDS` | `3` | Subway showdown rounds |
+| `MATRIX_DASHBOARD` | `1` | Start Operator Console with jack-in / daemon |
+| `MATRIX_DASHBOARD_PORT` | `8765` | Console HTTP port |
+| `MATRIX_OPEN_BROWSER` | `1` | Open Firefox when console starts (`0` to disable) |
+| `MATRIX_FAST` | `1` | Snappy defaults: ≤7B brains, no stream/rain, short replies (`0` = cinematic) |
+| `MATRIX_PACE` | `0` (fast) | Seconds of pause after each LLM line |
+| `MATRIX_STREAM` | `0` (fast) | Token drip to terminal |
+| `MATRIX_NO_RAIN` | `1` (fast) | Skip digital-rain scene intros |
+| `MATRIX_MAX_TOKENS` | `80` (fast) | Cap Ollama `num_predict` per line |
+| `MATRIX_PARALLEL` | `1` | Parallel cast LLM calls + Agent field fan-out beside Neo's acts (`0` = sequential) |
+| `MATRIX_HITL_WAIT` | `45` | Seconds to wait for console HITL before Operator LLM fallback |
+| `MATRIX_DIFFICULTY` | `balanced` | Preset: `cinematic` / `balanced` / `fast` / `tiny` |
+| `MATRIX_TTS` | `1` | Console speech — macOS `say` (Samantha/Daniel/…) or natural browser voices |
 
 ### Per-character brains
 
@@ -208,14 +274,18 @@ MATRIX_BRAIN_ARCHITECT=qwen2.5:7b MATRIX_BRAIN_ORACLE=qwen2.5:7b \
 ### `matrix-jack-in`
 
 ```bash
+# ONE COMMAND — continuous backend + Operator Console + Firefox
 uv run matrix-jack-in
+# Ctrl+C to stop
+
+uv run matrix-jack-in --no-browser          # console on, no Firefox
+uv run matrix-jack-in --interactive         # pause at HITLs (still opens console)
 ```
 
-1. Creates a **fresh** `thread_id` → writes `.active_thread`
-2. Invokes the compiled graph with Redis checkpointer
-3. Runs cinematic nodes until the **first HITL interrupt**
-4. Prints pause instructions (kind + hint)
-5. Exits; state is durable in Redis under that thread
+**Continuous (default):** same loop as `matrix-daemon` — full lives, auto HITLs,
+learning pulse, next life immediately. Starts the console and opens Firefox.
+
+**Interactive (`--interactive`):** pauses at HITLs; resume with `matrix-resume`.
 
 ### `matrix-resume <choice>`
 
@@ -280,40 +350,25 @@ Inspect Redis keys used by checkpoints / sessions (operator-side tooling).
 
 ---
 
-## 8. Execution path A — interactive jack-in
+## 8. Execution path A — jack-in
 
-Use this when **you** want to pick pills and choices.
-
-### Full red-path example (Operator sequence)
+### Continuous (default — what you want)
 
 ```bash
-# terminals: ollama serve + redis already up
-uv sync
-uv run matrix-pull-brains   # once
-
 uv run matrix-jack-in
-uv run matrix-resume extract          # bug
-uv run matrix-resume trust            # trust Trinity
-uv run matrix-resume "Am I the One?"  # oracle free text (if Architect consults)
-uv run matrix-resume red              # pill
-uv run matrix-resume refuse           # steak
-uv run matrix-resume jump             # jump program
-uv run matrix-resume fight            # fight Smith
-uv run matrix-resume call             # radio
-uv run matrix-resume accept           # code vision
-# → ending printed; life persisted to Redis SessionMemory
+# backend + console + Firefox; never pauses; Ctrl+C to stop
 ```
 
-Notes:
+### Interactive (human HITLs)
 
-- Architect may **skip** the Oracle interrupt when threat is high (`≥ MATRIX_THREAT_SKIP_ORACLE`).
-- Blue pill: after `matrix-resume blue`, Acts III–V are skipped; you go to epilogue/persist.
-- Each `jack-in` is a **new** thread (reducer lists stay clean). Prior **learning** still loads from Redis `agent_knowledge`.
-
-### Typical wall-clock
-
-Depends on model sizes and how many Ollama swaps occur. Light 7B-capped brains:
-minutes per full red path. Heavy 14B/32B: much longer.
+```bash
+uv run matrix-jack-in --interactive
+uv run matrix-resume extract
+uv run matrix-resume trust
+uv run matrix-resume "Am I the One?"
+uv run matrix-resume red
+# …
+```
 
 ---
 
@@ -606,13 +661,11 @@ export MATRIX_BRAIN_ORACLE=qwen2.5:7b
 export MATRIX_BRAIN_ARCHITECT=qwen2.5:7b
 uv run matrix-pull-brains
 
-# 3a) continuous agents (recommended)
-uv run matrix-daemon start
-uv run matrix-daemon status
-# stop later: uv run matrix-daemon stop
-
-# 3b) OR interactive
+# 3a) continuous (recommended) — backend + console + Firefox
 uv run matrix-jack-in
+# or background: uv run matrix-daemon start
+
+# 3b) interactive (pauses for you)
+uv run matrix-jack-in --interactive
 uv run matrix-resume extract
-# … continue HITLs …
 ```

@@ -1,6 +1,6 @@
 [project]
 name = "the-matrix"
-version = "0.2.0"
+version = "0.3.0"
 description = "The Matrix as a cinematic LangGraph multi-agent simulation (Ollama)"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -23,6 +23,7 @@ matrix-resume = "matrix.resume_driver:main"
 matrix-redis = "matrix.utils.redis_explorer:main"
 matrix-daemon = "matrix.daemon:main"
 matrix-pull-brains = "matrix.pull_brains:main"
+matrix-dashboard = "matrix.dashboard:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -30,6 +31,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/matrix"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/matrix/static" = "matrix/static"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

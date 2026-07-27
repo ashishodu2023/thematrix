@@ -73,6 +73,21 @@ LOCATIONS: dict[str, Location] = {
         "Desert of the Real",
         "The ruined surface; cold air after the red pill.",
     ),
+    "club_vip": Location(
+        "club_vip",
+        "Merovingian VIP",
+        "Velvet booths; causality served with wine and contempt.",
+    ),
+    "keymaker_hall": Location(
+        "keymaker_hall",
+        "Keymaker's Hall",
+        "Endless keys on hooks — every door is a decision.",
+    ),
+    "zion_dock": Location(
+        "zion_dock",
+        "Zion Dock",
+        "Docking clamps and cheering rebels under the earth.",
+    ),
 }
 
 DEFAULT_PHYSICS = [

@@ -66,7 +66,7 @@ def test_bend_reality(monkeypatch):
     monkeypatch.setattr("matrix.story.say", lambda *_a, **_k: None)
     result = bend_reality(_base())
     assert result["spoon_exists"] is False
-    assert "belief_over_form" in result["physics_rules"]
+    assert "belief_over_rules" in result["physics_rules"]
 
 
 def test_enforce_reality(monkeypatch):

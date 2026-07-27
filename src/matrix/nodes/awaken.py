@@ -7,6 +7,7 @@ from langgraph.types import Command, interrupt
 from matrix import story
 from matrix.awareness import aware_node
 from matrix.llm import character_speak
+from matrix.parallel import speak_many
 from matrix.world import LOCATIONS
 
 
@@ -17,14 +18,21 @@ def ship_awaken(state: dict) -> dict:
     story.say(f"{loc.name}: {loc.description}")
     story.say("Fluid. Needles. Ribs aching. The sky is not a sky.")
 
-    tank = character_speak("tank",
-        "Welcome Neo aboard after the red pill in one warm urgent sentence.",
+    lines = speak_many(
+        [
+            (
+                "tank",
+                "Welcome Neo aboard after the red pill in one warm urgent sentence.",
+            ),
+            (
+                "morpheus",
+                "Welcome Neo to the real world in one profound sentence.",
+            ),
+        ],
+        state=state,
     )
+    tank, morpheus = lines["tank"], lines["morpheus"]
     story.speak_as("Tank", tank)
-
-    morpheus = character_speak("morpheus",
-        "Welcome Neo to the real world in one profound sentence.",
-    )
     story.speak_as("Morpheus", morpheus)
 
     return {
@@ -34,6 +42,7 @@ def ship_awaken(state: dict) -> dict:
         "events": ["awaken:ship"],
         "log": ["[awaken] ship"],
         "locations_visited": [loc.id, "real_world"],
+        "active_tracks": ["neo:awaken"],
     }
 
 

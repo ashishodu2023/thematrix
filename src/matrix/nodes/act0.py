@@ -7,6 +7,7 @@ from langgraph.types import Command, interrupt
 from matrix import story
 from matrix.awareness import aware_node
 from matrix.llm import character_speak
+from matrix.parallel import speak_many
 from matrix.world import LOCATIONS
 
 
@@ -17,7 +18,8 @@ def white_rabbit(state: dict) -> dict:
     story.say(f"{loc.name}: knock at the door. Party people. A tattoo.")
     story.say("On a woman's shoulder: a white rabbit.")
 
-    neo = character_speak("neo",
+    neo = character_speak(
+        "neo",
         "Strangers invite you to a club because of a rabbit tattoo. One hesitant sentence.",
     )
     story.speak_as("Neo", neo)
@@ -28,6 +30,7 @@ def white_rabbit(state: dict) -> dict:
         "events": ["act0:rabbit"],
         "log": ["[rabbit] follow"],
         "locations_visited": [loc.id],
+        "active_tracks": ["neo:rabbit"],
     }
 
 
@@ -37,14 +40,21 @@ def office_cube(state: dict) -> dict:
     story.say("Cubicle farm. Deadlines. A FedEx envelope that should not exist.")
     story.say("Inside: a Nokia brick phone. It rings once.")
 
-    neo = character_speak("neo",
-        "Your boss threatens you while a mysterious phone rings. One stressed sentence.",
+    lines = speak_many(
+        [
+            (
+                "neo",
+                "Your boss threatens you while a mysterious phone rings. One stressed sentence.",
+            ),
+            (
+                "morpheus",
+                "On the phone, guide Neo out of the office past Agents in one calm sentence.",
+            ),
+        ],
+        state=state,
     )
+    neo, morpheus = lines["neo"], lines["morpheus"]
     story.speak_as("Neo", neo)
-
-    morpheus = character_speak("morpheus",
-        "On the phone, guide Neo out of the office past Agents in one calm sentence.",
-    )
     story.speak_as("Morpheus (phone)", morpheus)
 
     return {
@@ -52,6 +62,7 @@ def office_cube(state: dict) -> dict:
         "dialogue": [f"Neo: {neo}", f"Morpheus: {morpheus}"],
         "events": ["act0:office"],
         "log": ["[office] phone"],
+        "active_tracks": ["neo:office"],
     }
 
 
@@ -60,14 +71,21 @@ def interrogation(state: dict) -> dict:
     story.scene("ACT 0 — INTERROGATION")
     story.say("Green-tinted room. Mirror. Agents who do not blink.")
 
-    smith = character_speak("smith",
-        "Interrogate Neo about Morpheus. One contemptuous sentence ending in Mr. Anderson.",
+    lines = speak_many(
+        [
+            (
+                "smith",
+                "Interrogate Neo about Morpheus. One contemptuous sentence ending in Mr. Anderson.",
+            ),
+            (
+                "neo",
+                "Agents have you. Demand a phone call or lawyer in one stubborn sentence.",
+            ),
+        ],
+        state=state,
     )
+    smith, neo = lines["smith"], lines["neo"]
     story.speak_as("Agent Smith", smith)
-
-    neo = character_speak("neo",
-        "Agents have you. Demand a phone call or lawyer in one stubborn sentence.",
-    )
     story.speak_as("Neo", neo)
 
     story.say("Smith places a robotic bug against your belly. It burrows.")
@@ -77,6 +95,7 @@ def interrogation(state: dict) -> dict:
         "events": ["act0:interrogation"],
         "log": ["[interrogation] bug"],
         "bug_implanted": True,
+        "active_tracks": ["neo:interrogation"],
     }
 
 

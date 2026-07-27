@@ -56,3 +56,28 @@ class SessionMemory:
         session.agent_knowledge = session.agent_knowledge[-200:]
         cls.save(session)
         return session
+
+    @classmethod
+    def apply_sticky(cls, human_id: str, state: dict) -> MatrixSession:
+        """Permanent branch flags from choices this life."""
+        session = cls.load(human_id)
+        flags = dict(session.sticky_flags or {})
+        if state.get("bug_choice") == "refuse" or state.get("bug_implanted"):
+            flags["bug_implanted"] = True
+        if state.get("trust_choice") == "walk":
+            flags["walked_from_trinity"] = True
+        if state.get("trust_choice") == "trust":
+            flags["trusted_trinity"] = True
+        if state.get("steak_choice") == "steak":
+            flags["cypher_deal"] = True
+        if state.get("code_choice") == "accept":
+            flags["saw_code"] = True
+        if state.get("key_choice") == "take_key":
+            flags["took_key"] = True
+        if state.get("key_choice") == "refuse_key":
+            flags["refused_key"] = True
+        if (state.get("sticky_flags") or {}).get("defied_merovingian"):
+            flags["defied_merovingian"] = True
+        session.sticky_flags = flags
+        cls.save(session)
+        return session

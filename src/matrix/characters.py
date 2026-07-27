@@ -69,19 +69,49 @@ PERSONAS: dict[str, str] = {
         "choice for the simulation. Reply with ONLY one allowed option word — "
         "no punctuation, no explanation. Use what you know of all cast members."
     ),
+    "merovingian": (
+        "You are the Merovingian. French-accented, smug, obsessed with causality. "
+        "Speak in one short condescending sentence about choice being an illusion."
+    ),
+    "keymaker": (
+        "You are the Keymaker. Soft, precise, helpful. "
+        "Speak in one short sentence about keys, doors, and the only way forward."
+    ),
+    "sentinel": (
+        "You are a Sentinel machine. Mechanical, hunting, few words. "
+        "Speak in one clipped threat about detecting a hovercraft signal."
+    ),
+    "niobe": (
+        "You are Captain Niobe. Fierce, tactical, loyal to Zion. "
+        "Speak in one short command-style sentence."
+    ),
+    "persephone": (
+        "You are Persephone. Elegant, weary of the Merovingian, hungry for sincerity. "
+        "Speak in one short intimate sentence."
+    ),
+    "seraph": (
+        "You are Seraph, guardian of the Oracle. Calm, polite, lethal. "
+        "Speak in one short protective sentence."
+    ),
 }
 
 # Ascending Matrix rank (1 = lowest authority/power → 12 = Architect).
 # Bigger open-source Ollama brains are assigned to higher ranks.
 RANK: dict[str, int] = {
+    "sentinel": 1,
     "spoon_boy": 1,
     "jones": 2,
     "brown": 3,
     "tank": 4,
     "cypher": 5,
+    "keymaker": 6,
     "operator": 6,
+    "seraph": 7,
     "trinity": 7,
+    "niobe": 7,
+    "persephone": 7,
     "morpheus": 8,
+    "merovingian": 8,
     "neo": 9,
     "smith": 10,
     "oracle": 11,
@@ -104,6 +134,22 @@ RANK_BRAINS: dict[int, str] = {
     12: "qwen2.5:32b",  # ~32B — Architect
 }
 
+# Fast ladder — caps at 7B so M1 32GB / local Ollama stays snappy
+FAST_RANK_BRAINS: dict[int, str] = {
+    1: "tinyllama",
+    2: "gemma2:2b",
+    3: "gemma2:2b",
+    4: "phi3:mini",
+    5: "qwen2.5:3b",
+    6: "llama3.2",
+    7: "qwen2.5:3b",
+    8: "qwen2.5:3b",
+    9: "qwen2.5:7b",
+    10: "qwen2.5:7b",
+    11: "qwen2.5:7b",
+    12: "qwen2.5:7b",
+}
+
 DEFAULT_BRAINS: dict[str, str] = {
     name: RANK_BRAINS[rank] for name, rank in RANK.items()
 }
@@ -124,6 +170,11 @@ def brain_model(character: str, fallback: str = "llama3.2") -> str:
     env_key = f"MATRIX_BRAIN_{key.upper()}"
     if os.getenv(env_key):
         return os.environ[env_key]
+    from matrix.config import config
+
+    rank = character_rank(key)
+    if config.fast:
+        return FAST_RANK_BRAINS.get(rank, fallback)
     return DEFAULT_BRAINS.get(key, fallback)
 
 

@@ -62,6 +62,9 @@ def _silence(monkeypatch):
 def test_kernel_boot(monkeypatch):
     class FakeSession:
         lives = []
+        agent_knowledge = []
+        sticky_flags = {}
+        co_human_id = ""
 
     monkeypatch.setattr(
         "matrix.nodes.kernel.SessionMemory.load",

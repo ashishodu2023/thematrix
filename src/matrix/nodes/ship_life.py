@@ -7,6 +7,7 @@ from langgraph.types import Command, interrupt
 from matrix import story
 from matrix.awareness import aware_node
 from matrix.llm import character_speak
+from matrix.parallel import speak_many
 from matrix.world import LOCATIONS
 
 
@@ -15,13 +16,21 @@ def battery_farm(state: dict) -> dict:
     loc = LOCATIONS["real_world"]
     story.scene("ACT III — THE FARM")
     story.say(f"{loc.name}: towers of pods. Lightning. Harvested bodies.")
-    morpheus = character_speak("morpheus",
-        "Show Neo humanity as batteries. One devastating sentence.",
+    lines = speak_many(
+        [
+            (
+                "morpheus",
+                "Show Neo humanity as batteries. One devastating sentence.",
+            ),
+            (
+                "neo",
+                "You see the farm. One nauseated first-person sentence.",
+            ),
+        ],
+        state=state,
     )
+    morpheus, neo = lines["morpheus"], lines["neo"]
     story.speak_as("Morpheus", morpheus)
-    neo = character_speak("neo",
-        "You see the farm. One nauseated first-person sentence.",
-    )
     story.speak_as("Neo", neo)
     return {
         "location": loc.id,
@@ -30,6 +39,7 @@ def battery_farm(state: dict) -> dict:
         "events": ["farm:vision"],
         "log": ["[farm] vision"],
         "locations_visited": [loc.id],
+        "active_tracks": ["neo:farm"],
     }
 
 
@@ -38,20 +48,30 @@ def crew_dinner(state: dict) -> dict:
     loc = LOCATIONS["nebuchadnezzar"]
     story.scene("ACT III — CREW MESS")
     story.say(f"{loc.name}: protein goo. Jokes that try too hard.")
-    tank = character_speak("tank",
-        "Keep the crew mood light about the food in one warm sentence.",
+    lines = speak_many(
+        [
+            (
+                "tank",
+                "Keep the crew mood light about the food in one warm sentence.",
+            ),
+            (
+                "cypher",
+                "Sneer about missing steak and the Matrix illusion in one bitter sentence.",
+            ),
+        ],
+        state=state,
     )
+    tank, cypher = lines["tank"], lines["cypher"]
     story.speak_as("Tank", tank)
-    cypher = character_speak("cypher",
-        "Sneer about missing steak and the Matrix illusion in one bitter sentence.",
-    )
     story.speak_as("Cypher", cypher)
     return {
         "location": loc.id,
+        "scene": "dinner",
         "dialogue": [f"Tank: {tank}", f"Cypher: {cypher}"],
-        "events": ["mess:dinner"],
-        "log": ["[mess] dinner"],
+        "events": ["dinner:goo"],
+        "log": ["[dinner] mess"],
         "locations_visited": [loc.id],
+        "active_tracks": ["neo:dinner"],
     }
 
 

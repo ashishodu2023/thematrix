@@ -40,12 +40,15 @@ def operator_persist(state: dict) -> dict:
         locations_visited=visited,
     )
     session = SessionMemory.record_life(state["human_id"], life)
+    session = SessionMemory.apply_sticky(state["human_id"], state)
     knowledge = list(state.get("agent_memory") or [])
     if knowledge:
         session = SessionMemory.remember_agents(state["human_id"], knowledge)
         story.beat(
             f"Persisted {len(session.agent_knowledge)} agent-learning facts for next cycle"
         )
+    if session.sticky_flags:
+        story.beat(f"Sticky flags: {session.sticky_flags}")
     story.say(
         f"Life #{len(session.lives)} saved "
         f"(awakened_count={session.awakened_count})."
@@ -54,9 +57,10 @@ def operator_persist(state: dict) -> dict:
         "previous_lives": len(session.lives),
         "location": loc if isinstance(loc, str) else state.get("location"),
         "scene": "operator",
+        "sticky_flags": dict(session.sticky_flags),
         "events": ["operator:persisted"],
         "log": [
             f"[operator] cycle={state['cycle']} pill={state.get('pill_choice')} "
-            f"agent_memory={len(knowledge)}"
+            f"agent_memory={len(knowledge)} sticky={list(session.sticky_flags)}"
         ],
     }

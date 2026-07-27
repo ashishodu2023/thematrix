@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import random
 
+from matrix.physics import chase_modifiers
+
 
 def scan_sector(agent: str, city: str, sector: str) -> str:
     return f"Agent {agent} scanned {city}/{sector}: residual self-image nominal"
@@ -29,17 +31,17 @@ def pursue_step(
     round_no: int,
     reality_rewritten: bool,
     preferred: str | None = None,
+    state: dict | None = None,
 ) -> tuple[str, str]:
     """
     Return (status_delta, narration).
 
     status_delta is one of: continue | escaped | caught
-    `preferred` is Smith's independent LLM action biasing the chase.
+    Odds combine tactics + physics + surveillance sticky flags.
     """
     escape_chance = 0.55 if reality_rewritten else 0.35
     catch_chance = 0.25 if reality_rewritten else 0.45
 
-    # Independent Agent tactics bias the odds.
     if preferred == "close_in":
         catch_chance += 0.12
         escape_chance -= 0.08
@@ -52,9 +54,13 @@ def pursue_step(
         escape_chance += 0.10
         catch_chance -= 0.08
 
+    if state:
+        mod = chase_modifiers(state)
+        escape_chance += mod["escape"]
+        catch_chance += mod["catch"]
+
     escape_chance = max(0.05, min(0.85, escape_chance))
     catch_chance = max(0.05, min(0.85, catch_chance))
-    # renormalize if sum > 1
     total = escape_chance + catch_chance
     if total > 0.95:
         escape_chance *= 0.95 / total

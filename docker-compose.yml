@@ -1,0 +1,28 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - matrix_redis:/data
+
+  matrix:
+    build: .
+    ports:
+      - "8765:8765"
+    environment:
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      REDIS_URL: redis://redis:6379/0
+      MATRIX_DASHBOARD: "1"
+      MATRIX_OPEN_BROWSER: "0"
+      MATRIX_FAST: "1"
+      MATRIX_DIFFICULTY: ${MATRIX_DIFFICULTY:-fast}
+      MATRIX_HITL_WAIT: ${MATRIX_HITL_WAIT:-45}
+    depends_on:
+      - redis
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: ["uv", "run", "matrix-jack-in", "--no-browser"]
+
+volumes:
+  matrix_redis:

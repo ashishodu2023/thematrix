@@ -25,12 +25,15 @@ from pathlib import Path
 from langgraph.types import Command
 
 from matrix.characters import all_brain_models
+from matrix.config import config as matrix_config
 from matrix.continuous import learning_pulse
+from matrix import dashboard
 from matrix.graph import get_graph, reset_graph_cache
 from matrix.llm import operator_choose
 from matrix.start_driver import INITIAL_STATE
-from matrix.theme import paint
+from matrix.theme import paint, banner
 from matrix.thread_store import new_thread_id
+from matrix import rain as matrix_rain
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 PID_FILE = _PROJECT_ROOT / ".matrix_daemon.pid"
@@ -98,7 +101,7 @@ def _context_summary(values: dict) -> str:
     return "; ".join(parts)
 
 
-def run_one_cycle(human_id: str = "neo") -> dict:
+def run_one_cycle(human_id: str = "neo", co_human_id: str = "") -> dict:
     """Run one full auto jack-in using Operator brain for every HITL."""
     reset_graph_cache()
     graph = get_graph()
@@ -107,11 +110,13 @@ def run_one_cycle(human_id: str = "neo") -> dict:
     state = {
         **INITIAL_STATE,
         "human_id": human_id,
+        "co_human_id": co_human_id,
         "agent_memory": [],
         "character_actions": [],
     }
 
-    _log(f"CYCLE START thread={thread_id}")
+    _log(f"CYCLE START thread={thread_id} co={co_human_id or '-'}")
+    matrix_rain.rain(0.4)
     result = graph.invoke(state, config=config)
 
     safety = 0
@@ -127,28 +132,98 @@ def run_one_cycle(human_id: str = "neo") -> dict:
 
         kind = str(payload.get("kind") or "unknown")
         if kind == "oracle_question":
-            choice = operator_choose(
-                kind,
-                ["Am I the One?", "What is the Matrix?", "Why am I here?"],
-                _context_summary(result),
-            )
+            options = [
+                "Am I the One?",
+                "What is the Matrix?",
+                "Why am I here?",
+            ]
         else:
             options = _HITL_OPTIONS.get(kind, ["red"])
-            choice = operator_choose(kind, options, _context_summary(result))
 
-        _log(f"OPERATOR brain chose kind={kind} → {choice}")
+        from matrix.hitl_bridge import publish_pending, wait_for_choice, clear_pending
+
+        hitl = publish_pending(
+            thread_id=thread_id,
+            kind=kind,
+            message=str(payload.get("message") or ""),
+        )
+        dashboard.publish(
+            {
+                "status": "hitl",
+                "hitl": hitl,
+                "thread_id": thread_id,
+                "kind": kind,
+                "trace": result.get("trace_level"),
+                "threat": result.get("threat_level"),
+                "meta": result.get("meta_policy"),
+                "location": result.get("location"),
+                "scene": result.get("scene"),
+                "agent_positions": result.get("agent_positions"),
+                "faction_scoreboard": result.get("faction_scoreboard"),
+                "feed_append": [
+                    f"══ HITL · {kind} ══",
+                    f"Waiting for Operator Console ({matrix_config.hitl_wait:.0f}s)…",
+                ],
+            }
+        )
+
+        choice = wait_for_choice(thread_id, timeout=matrix_config.hitl_wait)
+        if choice:
+            _log(f"CONSOLE chose kind={kind} → {choice}")
+        else:
+            choice = operator_choose(kind, options, _context_summary(result))
+            _log(f"OPERATOR brain chose kind={kind} → {choice}")
+            clear_pending()
+
+        dashboard.publish(
+            {
+                "status": "hitl_resolved",
+                "hitl": None,
+                "choice": choice,
+                "kind": kind,
+                "feed_append": [f"Operator → {choice}"],
+            }
+        )
         result = graph.invoke(Command(resume=choice), config=config)
 
+    dashboard.publish(
+        {
+            "status": "cycle_end",
+            "hitl": None,
+            "thread_id": thread_id,
+            "outcome": result.get("outcome"),
+            "awakened": result.get("awakened"),
+            "trace": result.get("trace_level"),
+            "threat": result.get("threat_level"),
+            "meta": result.get("meta_policy"),
+            "sticky": result.get("sticky_flags"),
+            "world_tick": result.get("world_tick"),
+            "agent_positions": result.get("agent_positions"),
+            "faction_scoreboard": result.get("faction_scoreboard"),
+            "training_score": result.get("training_score"),
+        }
+    )
+    try:
+        from matrix.replay import save_life
+        from matrix.dashboard import read_status
+
+        feed = list((read_status() or {}).get("feed") or [])
+        path = save_life(result, feed=feed)
+        _log(f"REPLAY saved {path.name}")
+    except Exception as exc:  # noqa: BLE001
+        _log(f"REPLAY save skipped: {exc}")
     _log(
         f"CYCLE END outcome={result.get('outcome')} "
         f"score={result.get('training_score')} "
         f"awakened={result.get('awakened')} "
+        f"trace={result.get('trace_level')} "
+        f"meta={result.get('meta_policy')} "
         f"memory={len(result.get('agent_memory') or [])}"
     )
     return result
 
 
-def run_daemon(cycles: int, interval: float) -> None:
+def run_daemon(cycles: int, interval: float, co_human_id: str = "trinity") -> None:
     """
     Continuous loop: cycle → independent learning pulse → next cycle.
 
@@ -160,15 +235,21 @@ def run_daemon(cycles: int, interval: float) -> None:
     signal.signal(signal.SIGTERM, _handle_stop)
     signal.signal(signal.SIGINT, _handle_stop)
 
+    banner()
+    if matrix_config.dashboard:
+        # Browser is opened by matrix-jack-in / cmd_start — avoid a second tab here.
+        dashboard.start()
+        _log(f"Dashboard {dashboard.console_url()}")
+
     mode = "INFINITE" if cycles <= 0 else f"finite={cycles}"
-    _log(f"DAEMON START continuous={mode} interval={interval}s")
+    _log(f"DAEMON START continuous={mode} interval={interval}s co={co_human_id}")
     _log("Acts do not stop — agents keep learning until you run: matrix-daemon stop")
     _log(f"Character brains: {all_brain_models()}")
 
     completed = 0
     while _running:
         try:
-            result = run_one_cycle("neo")
+            result = run_one_cycle("neo", co_human_id=co_human_id)
             completed += 1
             if not _running:
                 break
@@ -177,7 +258,6 @@ def run_daemon(cycles: int, interval: float) -> None:
             _log(f"LEARNING PULSE done facts={len(facts)}")
         except Exception as exc:  # noqa: BLE001
             _log(f"CYCLE ERROR: {exc}")
-            # Keep running — brief pause then retry
             if not _running:
                 break
             time.sleep(max(interval, 5.0))
@@ -189,7 +269,6 @@ def run_daemon(cycles: int, interval: float) -> None:
 
         _log(f"CONTINUOUS — starting next cycle immediately (completed={completed})")
         if interval > 0:
-            # Interruptible sleep
             deadline = time.time() + interval
             while _running and time.time() < deadline:
                 time.sleep(min(0.5, deadline - time.time()))
@@ -197,7 +276,7 @@ def run_daemon(cycles: int, interval: float) -> None:
     _log(f"DAEMON EXIT after {completed} cycle(s)")
 
 
-def cmd_start(cycles: int, interval: float, foreground: bool) -> None:
+def cmd_start(cycles: int, interval: float, foreground: bool, co_human: str) -> None:
     if PID_FILE.exists():
         pid = PID_FILE.read_text(encoding="utf-8").strip()
         try:
@@ -210,7 +289,10 @@ def cmd_start(cycles: int, interval: float, foreground: bool) -> None:
     if foreground:
         PID_FILE.write_text(str(os.getpid()), encoding="utf-8")
         try:
-            run_daemon(cycles, interval)
+            if matrix_config.dashboard:
+                url = dashboard.start_console(open_browser=True)
+                print(paint(f"Operator Console → {url}"))
+            run_daemon(cycles, interval, co_human_id=co_human)
         finally:
             if PID_FILE.exists():
                 PID_FILE.unlink()
@@ -225,6 +307,8 @@ def cmd_start(cycles: int, interval: float, foreground: bool) -> None:
         str(cycles),
         "--interval",
         str(interval),
+        "--co-human",
+        co_human,
     ]
     log_fh = LOG_FILE.open("a", encoding="utf-8")
     proc = subprocess.Popen(
@@ -238,8 +322,15 @@ def cmd_start(cycles: int, interval: float, foreground: bool) -> None:
     PID_FILE.write_text(str(proc.pid), encoding="utf-8")
     print(paint(f"Daemon started pid={proc.pid} (continuous — never stops on its own)"))
     print(paint(f"Log: {LOG_FILE}"))
+    url = dashboard.console_url()
+    print(paint(f"Dashboard: {url}"))
+    if matrix_config.dashboard:
+        if dashboard.wait_ready(timeout=8.0):
+            dashboard.open_firefox()
+            print(paint("Opening Firefox…"))
+        else:
+            print(paint(f"Console not ready yet — open {url} manually"))
     print(paint("Stop with: uv run matrix-daemon stop"))
-
 
 def cmd_stop() -> None:
     if not PID_FILE.exists():
@@ -297,21 +388,27 @@ def main(argv: list[str] | None = None) -> None:
         help="Seconds between cycles (default 0 = immediate next life).",
     )
     p_start.add_argument("--foreground", action="store_true")
+    p_start.add_argument(
+        "--co-human",
+        default="trinity",
+        help="Second jack-in seat (default trinity)",
+    )
 
     p_run = sub.add_parser("run", help="Foreground continuous worker")
     p_run.add_argument("--cycles", type=int, default=0)
     p_run.add_argument("--interval", type=float, default=0.0)
+    p_run.add_argument("--co-human", default="trinity")
 
     sub.add_parser("stop", help="Stop continuous daemon")
     sub.add_parser("status", help="Show daemon status / recent logs")
 
     args = parser.parse_args(argv)
     if args.cmd == "start":
-        cmd_start(args.cycles, args.interval, args.foreground)
+        cmd_start(args.cycles, args.interval, args.foreground, args.co_human)
     elif args.cmd == "run":
         PID_FILE.write_text(str(os.getpid()), encoding="utf-8")
         try:
-            run_daemon(args.cycles, args.interval)
+            run_daemon(args.cycles, args.interval, co_human_id=args.co_human)
         finally:
             PID_FILE.unlink(missing_ok=True)
     elif args.cmd == "stop":
