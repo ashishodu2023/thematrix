@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 import time
+import os
 from functools import lru_cache
 
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -175,6 +176,8 @@ def character_act(
     allowed_actions: list[str],
     situation: str,
     state: dict | None = None,
+    *,
+    tools: str | None = None,
 ) -> tuple[CharacterDecision, dict]:
     if not allowed_actions:
         raise ValueError("allowed_actions must be non-empty")
@@ -182,15 +185,42 @@ def character_act(
     key = character.strip().lower()
     ctx = state if state is not None else current_state()
     opts = ", ".join(allowed_actions)
+
+    rag_block = ""
+    try:
+        from matrix.rag import retrieve_block
+
+        rag_block = retrieve_block(
+            situation,
+            human_id=str((ctx or {}).get("human_id") or "neo"),
+            character=key,
+            k=3,
+        )
+    except Exception:  # noqa: BLE001
+        rag_block = ""
+
+    tool_hint = ""
+    tool_allowed = None
+    if tools:
+        from matrix.tool_runtime import AGENT_TOOLS, OPERATOR_TOOLS, tool_catalog as list_tools
+
+        tool_allowed = OPERATOR_TOOLS if tools == "operator" else AGENT_TOOLS
+        tool_hint = (
+            f"\nOptional tools (zero or one line): TOOL: <{list_tools(tools)}> (arg)\n"
+            "Example: TOOL: scan(highway)"
+        )
+
     user = (
         f"{situation}\n\n"
-        f"You act independently for your faction. "
+        + (f"{rag_block}\n\n" if rag_block else "")
+        + f"You act independently for your faction. "
         f"Choose exactly one ACTION from: {opts}.\n"
         "Reply in this exact format (three lines, spaces after colons):\n"
         "ACTION: <one allowed action>\n"
         "SAY: <one short in-character sentence>\n"
         "LEARN: <one short fact you inferred about another agent or the anomaly>\n"
         "Do not glue words together. Always put a space after each colon."
+        + tool_hint
     )
     # Non-streaming so ACTION/SAY/LEARN parse cleanly
     raw = character_speak(key, user, state=ctx, stream=False)
@@ -204,6 +234,59 @@ def character_act(
     patches.update(record_action(key, action, speech[:80]))
     if learned:
         patches.update(remember(key, learned))
+    if tool_allowed and ctx is not None:
+        from matrix.tool_runtime import run_tools
+
+        tool_patch = run_tools({**ctx, "current_agent": key}, raw, allowed=tool_allowed)
+        for k, v in tool_patch.items():
+            if k in {
+                "events",
+                "log",
+                "agent_reports",
+                "sectors_scanned",
+                "phone_taps",
+                "tool_results",
+            }:
+                patches[k] = list(patches.get(k) or []) + list(
+                    v if isinstance(v, list) else [v]
+                )
+            elif k not in {"ok"}:
+                patches[k] = v
+        # Native bind_tools pass (default ON; set MATRIX_BIND_TOOLS=0 to disable)
+        _bind = os.getenv("MATRIX_BIND_TOOLS", "1").strip().lower()
+        if _bind not in {"0", "false", "no", "off"}:
+            try:
+                from langchain_core.messages import HumanMessage, SystemMessage
+
+                from matrix.lc_tools import try_bound_invoke
+
+                bound = try_bound_invoke(
+                    get_character_llm(key),
+                    [
+                        SystemMessage(content=_system_for(key) + "\nPrefer structured tools."),
+                        HumanMessage(content=situation[:800]),
+                    ],
+                    kind=tools,
+                    state={**ctx, "current_agent": key},
+                )
+                if bound:
+                    _, bound_patches = bound
+                    for k, v in bound_patches.items():
+                        if k in {
+                            "events",
+                            "log",
+                            "agent_reports",
+                            "sectors_scanned",
+                            "phone_taps",
+                            "tool_results",
+                        }:
+                            patches[k] = list(patches.get(k) or []) + list(
+                                v if isinstance(v, list) else [v]
+                            )
+                        elif k not in {"ok"} and k not in patches:
+                            patches[k] = v
+            except Exception:  # noqa: BLE001
+                pass
     return decision, patches
 
 

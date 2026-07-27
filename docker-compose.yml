@@ -5,6 +5,11 @@ services:
       - "6379:6379"
     volumes:
       - matrix_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   matrix:
     build: .
@@ -14,15 +19,33 @@ services:
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       REDIS_URL: redis://redis:6379/0
       MATRIX_DASHBOARD: "1"
+      MATRIX_DASHBOARD_HOST: "0.0.0.0"
       MATRIX_OPEN_BROWSER: "0"
       MATRIX_FAST: "1"
       MATRIX_DIFFICULTY: ${MATRIX_DIFFICULTY:-fast}
       MATRIX_HITL_WAIT: ${MATRIX_HITL_WAIT:-45}
+      MATRIX_SOUND: "0"
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    volumes:
+      - matrix_replays:/app/.matrix_replays
     command: ["uv", "run", "matrix-jack-in", "--no-browser"]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8765/api/status', timeout=2)",
+        ]
+      interval: 15s
+      timeout: 5s
+      start_period: 40s
+      retries: 8
 
 volumes:
   matrix_redis:
+  matrix_replays:

@@ -118,12 +118,41 @@ def submit_choice(
         if lowered not in {a.lower() for a in allowed}:
             raise ValueError(f"Invalid choice {text!r}; expected one of {allowed}")
         text = next(a for a in allowed if a.lower() == lowered)
+
+    # Multi-seat voting for dual kinds
+    try:
+        import os
+
+        from matrix.multiplayer import DUAL_SEAT_KINDS, clear_votes, record_vote
+
+        if (
+            os.getenv("MATRIX_MULTI_SEAT", "1").strip().lower() not in {"0", "false", "no"}
+            and kind in DUAL_SEAT_KINDS
+        ):
+            resolved = record_vote(kind, seat, text)
+            if not resolved.get("ready"):
+                return {
+                    "thread_id": tid,
+                    "kind": kind,
+                    "choice": text,
+                    "seat": seat,
+                    "pending_seats": resolved.get("needed") or [],
+                    "votes": resolved.get("votes") or {},
+                    "waiting": True,
+                    "submitted_at": time.time(),
+                }
+            text = str(resolved.get("choice") or text)
+            clear_votes(kind)
+    except Exception:  # noqa: BLE001
+        pass
+
     payload = {
         "thread_id": tid,
         "kind": kind,
         "choice": text,
         "seat": seat,
         "submitted_at": time.time(),
+        "waiting": False,
     }
     _HITL_CHOICE.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return payload

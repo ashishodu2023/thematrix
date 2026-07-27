@@ -17,6 +17,18 @@ def resume_choice(choice: str, *, seat: str = "operator") -> dict[str, Any]:
     """Submit HITL choice for daemon waiters and/or resume an interactive thread."""
     pending = read_pending() or {}
     recorded = submit_choice(choice, seat=seat)
+    try:
+        from matrix.timeline import record
+
+        record(
+            kind=str(pending.get("kind") or "hitl"),
+            choice=str(recorded.get("choice") or choice),
+            why=f"seat={seat} · {pending.get('message') or 'operator decision'}",
+            scene=str(pending.get("kind") or ""),
+            meta={"seat": seat},
+        )
+    except Exception:  # noqa: BLE001
+        pass
 
     # If a jack-in is paused in Redis checkpoint, resume it in a worker thread.
     def _run() -> None:

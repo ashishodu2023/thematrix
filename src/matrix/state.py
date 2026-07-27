@@ -32,6 +32,16 @@ def merge_scoreboard(
     return out
 
 
+def last_value(left: Any, right: Any) -> Any:
+    """Reducer: last writer wins (safe under accidental parallel updates)."""
+    return right if right is not None else left
+
+
+def or_bool(left: bool | None, right: bool | None) -> bool:
+    """Reducer: True if any parallel branch says True."""
+    return bool(left) or bool(right)
+
+
 class MatrixState(TypedDict):
     """
     Shared simulation kernel — the Matrix itself.
@@ -78,9 +88,9 @@ class MatrixState(TypedDict):
     character_actions: Annotated[list[str], operator.add]
     dialogue: Annotated[list[str], operator.add]
 
-    # Rule-bending
-    spoon_exists: bool
-    reality_rewritten: bool
+    # Rule-bending (reducers — parallel fan-in must not crash the cycle)
+    spoon_exists: Annotated[bool, last_value]
+    reality_rewritten: Annotated[bool, last_value]
 
     # Pursuit loop
     pursuit_round: int
@@ -117,3 +127,5 @@ class MatrixState(TypedDict):
     outcome: str
     previous_lives: int
     locations_visited: Annotated[list[str], unique_extend]
+    wander_hops: int
+    tool_results: Annotated[list[str], operator.add]

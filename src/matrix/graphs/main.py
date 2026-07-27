@@ -44,6 +44,15 @@ from matrix.nodes.expanded import (
     sentinel_hunt,
     zion_dock,
 )
+from matrix.nodes.wander import city_wander
+from matrix.nodes.reloaded import burly_brawl, club_hel_fight
+from matrix.routing import (
+    route_after_cafe,
+    route_after_keymaker,
+    route_after_lobby,
+    route_after_merovingian,
+    route_after_wander,
+)
 from matrix.nodes.field import (
     field_pulse_a,
     field_pulse_b,
@@ -174,7 +183,10 @@ def build_graph():
     builder.add_node("field_pulse_e", field_pulse_e)
     builder.add_node("merovingian_vip", merovingian_vip)
     builder.add_node("keymaker_doors", keymaker_doors)
+    builder.add_node("city_wander", city_wander)
     builder.add_node("highway_chase", highway_chase)
+    builder.add_node("club_hel_fight", club_hel_fight)
+    builder.add_node("burly_brawl", burly_brawl)
     builder.add_node("sentinel_hunt", sentinel_hunt)
     builder.add_node("zion_dock", zion_dock)
 
@@ -182,27 +194,24 @@ def build_graph():
     builder.add_edge(START, "simulation_kernel")
     builder.add_edge("simulation_kernel", "meta_layer")
 
-    # Act 0: Neo rabbit ∥ Agent field → join at office
+    # Act 0: Neo rabbit ∥ Agent field → join at office (wait for BOTH)
     builder.add_edge("meta_layer", "white_rabbit")
     builder.add_edge("meta_layer", "field_pulse_a")
-    builder.add_edge("white_rabbit", "office_cube")
-    builder.add_edge("field_pulse_a", "office_cube")
+    builder.add_edge(["white_rabbit", "field_pulse_a"], "office_cube")
 
-    # Act 0: Neo office ∥ Agents → join at interrogation
+    # Act 0: interrogation ∥ Agents → join at bug_prompt
     builder.add_edge("office_cube", "interrogation")
     builder.add_edge("office_cube", "field_pulse_b")
-    builder.add_edge("interrogation", "bug_prompt")
-    builder.add_edge("field_pulse_b", "bug_prompt")
+    builder.add_edge(["interrogation", "field_pulse_b"], "bug_prompt")
 
     builder.add_edge("bug_prompt", "bug_choice")
     # bug_choice Command → dream_glitch | bug_refuse
     builder.add_edge("bug_refuse", "dream_glitch")
 
-    # Act I: dream ∥ Agents → join at meet_trinity
+    # Act I: meet_trinity ∥ Agents → join at trust_prompt
     builder.add_edge("dream_glitch", "meet_trinity")
     builder.add_edge("dream_glitch", "field_pulse_c")
-    builder.add_edge("meet_trinity", "trust_prompt")
-    builder.add_edge("field_pulse_c", "trust_prompt")
+    builder.add_edge(["meet_trinity", "field_pulse_c"], "trust_prompt")
 
     builder.add_edge("trust_prompt", "trust_choice")
     builder.add_edge("morpheus_briefing", "architect")
@@ -211,13 +220,48 @@ def build_graph():
     builder.add_edge("oracle_question", "oracle_speak")
     builder.add_edge("oracle_speak", "cafe_scene")
 
-    # Expanded Act II set pieces before swarm
-    builder.add_edge("cafe_scene", "merovingian_vip")
-    builder.add_edge("merovingian_vip", "keymaker_doors")
-    builder.add_edge("keymaker_doors", "highway_chase")
-    builder.add_edge("highway_chase", "prepare_swarm")
+    # Expanded Act II — open-city forks (Cafe → Merovingian/Wander/Club Hel → Keymaker…)
+    builder.add_conditional_edges(
+        "cafe_scene",
+        route_after_cafe,
+        {
+            "merovingian_vip": "merovingian_vip",
+            "city_wander": "city_wander",
+            "club_hel_fight": "club_hel_fight",
+        },
+    )
+    builder.add_conditional_edges(
+        "merovingian_vip",
+        route_after_merovingian,
+        {
+            "club_hel_fight": "club_hel_fight",
+            "keymaker_doors": "keymaker_doors",
+        },
+    )
+    builder.add_edge("club_hel_fight", "keymaker_doors")
+    builder.add_conditional_edges(
+        "keymaker_doors",
+        route_after_keymaker,
+        {
+            "highway_chase": "highway_chase",
+            "city_wander": "city_wander",
+            "prepare_swarm": "prepare_swarm",
+        },
+    )
+    builder.add_conditional_edges(
+        "city_wander",
+        route_after_wander,
+        {
+            "highway_chase": "highway_chase",
+            "prepare_swarm": "prepare_swarm",
+            "merovingian_vip": "merovingian_vip",
+            "city_wander": "city_wander",
+            "club_hel_fight": "club_hel_fight",
+        },
+    )
+    # Highway ∥ field pulse → single prepare_swarm (was double-invoking → CYCLE ERROR)
     builder.add_edge("highway_chase", "field_pulse_d")
-    builder.add_edge("field_pulse_d", "prepare_swarm")
+    builder.add_edge(["highway_chase", "field_pulse_d"], "prepare_swarm")
 
     builder.add_conditional_edges(
         "prepare_swarm",
@@ -235,7 +279,15 @@ def build_graph():
     )
     builder.add_edge("bend_reality", "lobby_breach")
     builder.add_edge("enforce_reality", "lobby_breach")
-    builder.add_edge("lobby_breach", "pursuit_loop")
+    builder.add_conditional_edges(
+        "lobby_breach",
+        route_after_lobby,
+        {
+            "burly_brawl": "burly_brawl",
+            "pursuit_loop": "pursuit_loop",
+        },
+    )
+    builder.add_edge("burly_brawl", "pursuit_loop")
     builder.add_edge("morpheus_offer", "pill_choice")
 
     builder.add_edge("blue_ending", "epilogue")
@@ -254,10 +306,9 @@ def build_graph():
     builder.add_edge("post_jump_training", "trinity_warn")
     builder.add_edge("trinity_warn", "fight_or_flee")
 
-    # Act IV: fight choice ∥ Agents still hunting → join combat
-    builder.add_edge("fight_or_flee", "combat_beat")
+    # Act IV: fight ∥ Agents → join combat once
     builder.add_edge("fight_or_flee", "field_pulse_e")
-    builder.add_edge("field_pulse_e", "combat_beat")
+    builder.add_edge(["fight_or_flee", "field_pulse_e"], "combat_beat")
 
     builder.add_edge("combat_beat", "radio_prompt")
     builder.add_edge("radio_prompt", "radio_choice")

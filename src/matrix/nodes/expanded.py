@@ -49,8 +49,11 @@ def merovingian_vip(state: dict) -> dict:
     defy = not sticky.get("accepted_causality")
     if defy:
         sticky["defied_merovingian"] = True
+        # Persephone's offer — memory kiss as sticky edge
+        sticky["persephone_kiss"] = True
         board = scoreboard_delta([("neo", "defy"), ("merovingian", "accept_causality")])
         MindStore.remember("merovingian", "Neo defied causality lecture", neo_location=loc.id)
+        MindStore.remember("persephone", "offered Neo a memory kiss", neo_location=loc.id)
     else:
         sticky["accepted_causality"] = True
         board = scoreboard_delta([("neo", "accept_causality")])
@@ -122,9 +125,11 @@ def keymaker_doors(state: dict) -> dict:
         sticky["took_key"] = True
         rules = apply_event(rules, "key_path")
         story.beat("Neo takes the key — a path through the code opens.")
+        story.beat("BRANCH → highway_chase (key accepted)")
     else:
         sticky["refused_key"] = True
         story.beat("Neo refuses the key. Doors stay locked.")
+        story.beat("BRANCH → city_wander (key refused)")
 
     board = scoreboard_delta([("neo", choice), ("keymaker", "teach")])
     MindStore.remember("keymaker", f"Neo chose {choice}", neo_location=loc.id)
@@ -232,19 +237,33 @@ def sentinel_hunt(state: dict) -> dict:
     loc = LOCATIONS["real_world"]
     story.scene("ACT III — SENTINEL SWARM")
     story.say(f"{loc.name}: scrapers in the dark. EMP primed.")
+    emp_patch: dict = {}
+    try:
+        from matrix.emp_game import apply_to_ship_state
+
+        emp_patch = apply_to_ship_state(state)
+    except Exception:  # noqa: BLE001
+        emp_patch = {}
+    destroyed = bool(state.get("ship_destroyed") or emp_patch.get("ship_destroyed"))
+    heat = emp_patch.get("emp_heat", state.get("emp_heat"))
+    tank_prompt = "Call EMP timing for the crew — one urgent sentence."
+    if destroyed:
+        tank_prompt = "Hull breached — scream one last EMP / abandon-ship sentence."
+        story.beat("SHIP DESTROYED — Sentinels through the hull")
+    elif heat is not None and float(heat) >= 75:
+        tank_prompt = f"Hull critical heat={float(heat):.0f} — one clipped EMP order."
     lines = speak_many(
         [
             (
                 "sentinel",
-                "Detect the hovercraft. One mechanical hunting sentence.",
+                "Detect the hovercraft. One mechanical hunting sentence."
+                + (" Hull already open." if destroyed else ""),
             ),
-            (
-                "tank",
-                "Call EMP timing for the crew — one urgent sentence.",
-            ),
+            ("tank", tank_prompt),
             (
                 "morpheus",
-                "Steady the crew against Sentinels in one calm sentence.",
+                "Steady the crew against Sentinels in one calm sentence."
+                + (" The ship is dying." if destroyed else ""),
             ),
             (
                 "niobe",
@@ -260,21 +279,33 @@ def sentinel_hunt(state: dict) -> dict:
     board = scoreboard_delta(
         [("sentinel", "hunt"), ("tank", "emp"), ("morpheus", "cover"), ("niobe", "cover")]
     )
+    if destroyed:
+        board = scoreboard_delta(
+            [("sentinel", "hunt"), ("sentinel", "hunt"), ("tank", "emp")]
+        )
+    sticky = dict(state.get("sticky_flags") or {})
+    sticky.update(emp_patch.get("sticky_flags") or {})
+    events = ["act3:sentinels"] + list(emp_patch.get("events") or [])
+    if destroyed:
+        events.append("act3:ship_destroyed")
     return {
         "location": loc.id,
         "scene": "sentinels",
         "sentinel_alert": True,
+        "ship_destroyed": destroyed,
         "dialogue": [
             f"Sentinel: {lines['sentinel']}",
             f"Tank: {lines['tank']}",
             f"Morpheus: {lines['morpheus']}",
             f"Niobe: {lines['niobe']}",
         ],
-        "events": ["act3:sentinels"],
-        "log": ["[sentinels] hunt"],
+        "events": events,
+        "log": ["[sentinels] hunt"] + list(emp_patch.get("log") or []),
         "locations_visited": [loc.id],
         "active_tracks": ["machines:sentinels", "neo:ship"],
         "faction_scoreboard": board,
+        "sticky_flags": sticky,
+        "emp_heat": heat,
         "agent_positions": {
             **(state.get("agent_positions") or {}),
             "sentinel": loc.id,

@@ -150,13 +150,37 @@ def steak_regret(state: dict) -> dict:
 def sentinel_scan(state: dict) -> dict:
     story.scene("ACT III — SENTINELS")
     story.say("EMP charged. Squiddies scrape the hull. Everyone holds breath.")
-    tank = character_speak("tank",
-        "Sentinels are scanning. Whisper one urgent stay-quiet sentence.",
+    emp_patch: dict = {}
+    try:
+        from matrix.emp_game import apply_to_ship_state
+
+        emp_patch = apply_to_ship_state(state)
+        heat = emp_patch.get("emp_heat")
+        if emp_patch.get("ship_destroyed"):
+            story.beat("EMP BOARD: hull breached — ship destroyed")
+        elif heat is not None:
+            story.beat(f"EMP BOARD: heat={float(heat):.0f} charges={emp_patch.get('emp_charges')}")
+    except Exception:  # noqa: BLE001
+        emp_patch = {}
+    hint = ""
+    if emp_patch.get("ship_destroyed"):
+        hint = " The hull is already cracking — whisper panic."
+    elif emp_patch.get("sticky_flags", {}).get("hull_critical"):
+        hint = " Hull is critical — one breath from scrap."
+    tank = character_speak(
+        "tank",
+        "Sentinels are scanning. Whisper one urgent stay-quiet sentence." + hint,
     )
     story.speak_as("Tank", tank)
+    sticky = dict(state.get("sticky_flags") or {})
+    sticky.update(emp_patch.get("sticky_flags") or {})
     return {
         "dialogue": [f"Tank: {tank}"],
-        "events": ["sentinel:scan"],
-        "log": ["[sentinel] scan"],
-        "sentinel_alert": True,
+        "events": ["sentinel:scan"] + list(emp_patch.get("events") or []),
+        "log": ["[sentinel] scan"] + list(emp_patch.get("log") or []),
+        "sentinel_alert": emp_patch.get("sentinel_alert", True),
+        "sticky_flags": sticky,
+        "ship_destroyed": bool(emp_patch.get("ship_destroyed")),
+        "emp_heat": emp_patch.get("emp_heat"),
+        "emp_charges": emp_patch.get("emp_charges"),
     }

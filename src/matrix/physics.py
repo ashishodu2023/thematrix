@@ -74,6 +74,9 @@ def chase_modifiers(state: dict) -> dict[str, float]:
         escape += 0.05
     if sticky.get("took_key"):
         escape += 0.07
+    if sticky.get("persephone_kiss"):
+        escape += 0.04
+        catch -= 0.02
     if sticky.get("defied_merovingian"):
         catch += 0.04
     policy = str(state.get("meta_policy") or "").lower()

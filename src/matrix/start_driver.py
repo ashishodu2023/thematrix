@@ -74,6 +74,8 @@ INITIAL_STATE = {
     "meta_policy": "",
     "faction_scoreboard": {},
     "active_tracks": [],
+    "wander_hops": 0,
+    "tool_results": [],
 }
 
 

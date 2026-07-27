@@ -58,13 +58,53 @@
 
   .glance { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; margin-bottom: 0.85rem; }
   @media (max-width: 800px) { .glance { grid-template-columns: 1fr; } .hero { grid-template-columns: 1fr; } }
-  .chip { border: 1px solid var(--line); background: var(--panel); padding: 0.75rem 0.9rem; }
+  .chip { border: 1px solid var(--line); background: var(--panel); padding: 0.75rem 0.9rem;
+    transform: perspective(800px) rotateX(4deg);
+    transform-style: preserve-3d;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(57,255,20,0.06);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .chip:hover { transform: perspective(800px) rotateX(0deg) translateY(-2px); }
+  .hud3d {
+    width: 100%; height: 160px; display:block;
+    border: 1px solid var(--line);
+    background: linear-gradient(180deg, #020805, #010302);
+  }
+  .hud3d.tall { height: 220px; }
+  .hud3d.short { height: 130px; }
+  .meters-flat { display:none; }
+  body.flat-hud .meters-flat { display:grid; }
+  body.flat-hud .hud3d-meters, body.flat-hud .hud3d-branch,
+  body.flat-hud .hud3d-faction, body.flat-hud .hud3d-emp { display:none; }
+  .holo-panel {
+    transform: perspective(900px) rotateY(-2deg);
+    box-shadow: 8px 12px 30px rgba(0,0,0,0.5), 0 0 20px rgba(57,255,20,0.06);
+  }
+  .hitl-box {
+    transform: perspective(700px) rotateX(6deg);
+    box-shadow: 0 16px 40px rgba(255,213,79,0.12);
+  }
+  #feed .msg {
+    transform: perspective(600px) translateZ(0);
+    transition: transform 0.2s;
+  }
+  #feed .msg.speak:hover { transform: perspective(600px) translateZ(8px) scale(1.01); }
+  .hero {
+    transform: perspective(1000px) rotateX(3deg);
+    transform-origin: top center;
+  }
   .chip .k { font-size: 0.6rem; letter-spacing: 0.18em; color: var(--dim); margin-bottom: 0.3rem; }
   .chip .v { font-size: 1rem; color: var(--soft); word-break: break-word; }
   .chip .h { font-size: 0.72rem; color: var(--mute); margin-top: 0.3rem; line-height: 1.35; }
 
+  .meters-wrap { margin-bottom: 0.85rem; }
   .meters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.7rem; margin-bottom: 0.85rem; }
   @media (max-width: 720px) { .meters { grid-template-columns: 1fr 1fr; } }
+  .meters-flat { display: none; margin-bottom: 0; }
+  body.flat-hud .meters-flat { display: grid; }
+  body.flat-hud .hud3d-meters, body.flat-hud .hud3d-branch,
+  body.flat-hud .hud3d-faction, body.flat-hud .hud3d-emp { display: none; }
+  body:not(.flat-hud) #branch-flow { display: none !important; }
   .meter { border: 1px solid var(--line); background: var(--panel); padding: 0.65rem 0.8rem; }
   .meter label { display:flex; justify-content:space-between; font-size:0.58rem; letter-spacing:0.14em; color:var(--dim); }
   .meter .val { font-size: 1.35rem; margin: 0.2rem 0 0.4rem; }
@@ -95,6 +135,86 @@
       linear-gradient(180deg, rgba(0,0,0,0.2), transparent);
     border: 1px solid var(--line); padding: 0.75rem; min-height: 420px;
   }
+  .map3d-wrap {
+    position: relative;
+    height: min(52vh, 520px);
+    min-height: 360px;
+    border: 1px solid var(--line);
+    background:
+      radial-gradient(ellipse at 50% 30%, rgba(57,255,20,0.08), transparent 55%),
+      linear-gradient(180deg, #020805, #010302);
+    overflow: hidden;
+  }
+  .map3d-wrap canvas { display:block; width:100%; height:100%; cursor: grab; }
+  .map3d-wrap canvas:active { cursor: grabbing; }
+  .map3d-err {
+    position: absolute; inset: 0; display:flex; align-items:center; justify-content:center;
+    padding: 1rem; text-align: center; color: var(--warn); font-size: 0.78rem;
+    background: rgba(1,3,2,0.85); z-index: 2;
+  }
+  .map3d-err[hidden] { display: none !important; }
+  .map-mode { display:flex; gap:0.35rem; align-items:center; }
+  .map-mode button {
+    background:#041008; color:var(--green); border:1px solid var(--line);
+    font-family:inherit; font-size:0.68rem; padding:0.25rem 0.5rem; cursor:pointer;
+  }
+  .map-mode button.on { border-color:var(--green); box-shadow:0 0 8px rgba(57,255,20,0.25); }
+  body.map-2d .map3d-wrap { display:none; }
+  body.map-3d .map-board { display:none; }
+  /* Default before JS: show 3D shell */
+  body:not(.map-2d) .map-board { display:none; }
+  body.map-2d .map-board { display:grid; }
+  .branch-panel {
+    margin-bottom: 0.85rem; padding: 0.75rem 0.9rem;
+    border: 1px solid var(--line); background: rgba(0,0,0,0.35);
+  }
+  .branch-panel .k { letter-spacing: 0.12em; font-size: 0.68rem; color: var(--dim); }
+  .branch-why { margin-top: 0.35rem; color: var(--soft); font-size: 0.78rem; min-height: 1.1em; }
+  .branch-path {
+    margin-top: 0.45rem; font-size: 0.72rem; color: var(--warn);
+    letter-spacing: 0.04em; word-break: break-word;
+  }
+  .branch-flow {
+    display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;
+    margin-top: 0.65rem;
+  }
+  .branch-node {
+    border: 1px solid var(--line); padding: 0.35rem 0.55rem;
+    font-size: 0.72rem; color: var(--dim); position: relative;
+    transition: border-color 0.2s, box-shadow 0.2s, color 0.2s, background 0.2s;
+  }
+  .branch-node.fork::after {
+    content: '⑂'; position: absolute; top: -0.35rem; right: -0.15rem;
+    font-size: 0.65rem; color: var(--warn);
+  }
+  .branch-node.current {
+    color: #041204; background: var(--soft); border-color: var(--soft);
+    box-shadow: 0 0 14px rgba(57,255,20,0.45);
+    animation: branch-pulse 1.4s ease-in-out infinite;
+  }
+  .branch-node.taken { color: var(--soft); border-color: rgba(57,255,20,0.55); }
+  .branch-node.ahead {
+    color: var(--warn); border-color: rgba(255,213,79,0.55);
+  }
+  .branch-node.predicted {
+    color: #041204; background: var(--warn); border-color: var(--warn);
+  }
+  .branch-arrow { color: var(--dim); font-size: 0.75rem; opacity: 0.7; }
+  .branch-arrow.taken { color: var(--soft); }
+  .branch-arrow.predicted { color: var(--warn); }
+  .branch-opts {
+    margin-top: 0.55rem; display: flex; flex-wrap: wrap; gap: 0.35rem;
+  }
+  .branch-opt {
+    border: 1px dashed rgba(255,213,79,0.45); color: var(--warn);
+    padding: 0.2rem 0.45rem; font-size: 0.68rem;
+  }
+  .branch-opt.pick {
+    border-style: solid; background: rgba(255,213,79,0.15);
+  }
+  @keyframes branch-pulse {
+    0%, 100% { box-shadow: 0 0 10px rgba(57,255,20,0.35); }
+    50% { box-shadow: 0 0 22px rgba(57,255,20,0.7); }
   }
   .zone { border: 1px dashed rgba(31,107,46,0.55); padding: 0.55rem; background: rgba(0,0,0,0.25); }
   .zone.hot { border-style: solid; border-color: rgba(57,255,20,0.35); }
@@ -209,6 +329,35 @@
   .metrics .m .v { font-size:1.05rem; color:var(--soft); margin-top:0.15rem; }
   .replay-bar { display:flex; gap:0.4rem; flex-wrap:wrap; align-items:center; margin-top:0.55rem; }
   .replay-bar select { background:#041008; color:var(--soft); border:1px solid var(--line); font-family:inherit; font-size:0.72rem; padding:0.25rem; }
+  .ops-panel { border:1px solid var(--line); background:var(--panel); padding:0.65rem 0.9rem; margin-bottom:0.85rem; }
+  .ops-panel .k { letter-spacing:0.12em; font-size:0.68rem; color:var(--dim); }
+  .ops-row { display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.45rem; align-items:center; }
+  .ops-panel button, .ops-panel select {
+    background:#041008; color:var(--green); border:1px solid var(--line);
+    font-family:inherit; font-size:0.72rem; padding:0.3rem 0.55rem; cursor:pointer;
+  }
+  .ops-panel button:hover { border-color:var(--green); }
+  .timeline-list, .dossier-list, .analytics-box {
+    margin-top:0.45rem; max-height:160px; overflow:auto; font-size:0.72rem; color:var(--soft);
+  }
+  .timeline-list div, .dossier-list div { border-bottom:1px solid rgba(57,255,20,0.08); padding:0.25rem 0; }
+  .analytics-box .row { display:flex; justify-content:space-between; gap:0.5rem; margin:0.15rem 0; }
+  .emp-heat { height:8px; background:#0a1a0c; border:1px solid var(--line); margin-top:0.4rem; }
+  .emp-heat i { display:block; height:100%; background:var(--warn); width:40%; }
+  body.drama .glance, body.drama .meters, body.drama .meters-wrap, body.drama #dojo, body.drama .bottom,
+  body.drama .branch-panel, body.drama #ops-director, body.drama #ops-analytics,
+  body.drama #ops-dossiers, body.drama #ops-emp { display:none !important; }
+  body.drama .grid { grid-template-columns: 1.35fr 1fr; }
+  /* keep map visible in drama — feed still filters to dialogue only */
+  body.compact .glance, body.compact #dojo, body.compact .bottom,
+  body.compact #ops-dossiers, body.compact #ops-analytics { display:none !important; }
+  body.compact .grid { grid-template-columns: 1fr 1fr; }
+  @media (max-width:720px) {
+    .shell { padding: 0.6rem; }
+    .hero { flex-direction: column; align-items: flex-start; }
+    .grid { grid-template-columns: 1fr !important; }
+    .toolbar button { padding: 0.3rem 0.45rem; font-size: 0.68rem; }
+  }
 
   footer { margin-top: 0.9rem; font-size: 0.65rem; color: var(--dim); letter-spacing: 0.06em; }
 </style>
@@ -251,6 +400,9 @@
     <button type="button" id="btn-emp">EMP</button>
     <button type="button" id="btn-jack">Jack-out</button>
     <button type="button" id="btn-skill">Load skill</button>
+    <button type="button" id="btn-drama">Drama</button>
+    <button type="button" id="btn-compact">Compact</button>
+    <button type="button" id="btn-flat-hud" title="Toggle flat meters vs 3D HUD">HUD 3D</button>
   </div>
   <div class="hitl-box" id="hitl-box" hidden>
     <div class="k">OPERATOR DECISION</div>
@@ -282,7 +434,113 @@
     <div class="h" id="g-tracks" style="margin-top:0.35rem; color:var(--soft);">Waiting for fan-out…</div>
   </section>
 
-  <section class="meters">
+  <section class="branch-panel holo-panel" id="branch-panel">
+    <div class="k">LIVE BRANCHING · 3D FORKS</div>
+    <div class="branch-why" id="branch-why">Waiting for a fork…</div>
+    <div class="branch-path" id="branch-path">path: —</div>
+    <canvas class="hud3d tall hud3d-branch" id="branch3d"></canvas>
+    <div class="branch-flow" id="branch-flow" hidden></div>
+    <div class="branch-opts" id="branch-opts"></div>
+  </section>
+
+  <section class="chip" id="dojo" style="margin-bottom:0.85rem; padding:0.65rem 0.9rem;">
+    <div class="k">CONSTRUCT DOJO</div>
+    <div class="h" id="dojo-skills" style="margin-top:0.35rem; color:var(--soft);">No programs loaded</div>
+    <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.5rem;">
+      <button type="button" id="btn-dojo-kung">Load kung_fu</button>
+      <button type="button" id="btn-dojo-jujitsu">Load jujitsu</button>
+      <button type="button" id="btn-dojo-spar">Spar (+2)</button>
+    </div>
+  </section>
+
+  <section class="ops-panel" id="ops-lobby">
+    <div class="k">NETWORKED LOBBY · TRUE MULTIPLAYER</div>
+    <div class="ops-row">
+      <button type="button" id="lobby-create">Create lobby</button>
+      <input id="lobby-code" placeholder="join code" maxlength="8" style="width:6rem;background:#041008;color:var(--soft);border:1px solid var(--line);font-family:inherit;padding:0.25rem 0.4rem;"/>
+      <select id="lobby-seat">
+        <option value="operator">seat: operator</option>
+        <option value="neo">seat: neo</option>
+        <option value="trinity">seat: trinity</option>
+      </select>
+      <input id="lobby-name" placeholder="your name" maxlength="24" style="width:7rem;background:#041008;color:var(--soft);border:1px solid var(--line);font-family:inherit;padding:0.25rem 0.4rem;"/>
+      <button type="button" id="lobby-join">Join</button>
+      <button type="button" id="lobby-leave">Leave</button>
+    </div>
+    <div class="h" id="lobby-status" style="margin-top:0.35rem;color:var(--soft);font-size:0.72rem;">—</div>
+    <div class="ops-row" style="margin-top:0.45rem;">
+      <select id="agency-cmd">
+        <option value="move">agency: move</option>
+        <option value="linger">linger</option>
+        <option value="hardline">hardline</option>
+        <option value="tap">tap</option>
+        <option value="dodge">dodge (neo)</option>
+        <option value="cover">cover (trinity)</option>
+        <option value="emp">emp (operator)</option>
+        <option value="cctv">cctv</option>
+      </select>
+      <input id="agency-target" placeholder="target sector" style="width:8rem;background:#041008;color:var(--soft);border:1px solid var(--line);font-family:inherit;padding:0.25rem 0.4rem;"/>
+      <button type="button" id="agency-go">Queue agency</button>
+    </div>
+  </section>
+
+  <section class="ops-panel" id="ops-director">
+    <div class="k">DIRECTOR · SEASON</div>
+    <div class="ops-row">
+      <button type="button" id="dir-pause">Pause</button>
+      <button type="button" id="dir-resume">Resume</button>
+      <select id="dir-force">
+        <option value="">force branch…</option>
+        <option value="city_wander">Wander</option>
+        <option value="club_hel_fight">Club Hel</option>
+        <option value="highway_chase">Highway</option>
+        <option value="burly_brawl">Burly Brawl</option>
+        <option value="prepare_swarm">Swarm</option>
+        <option value="merovingian_vip">Merovingian</option>
+        <option value="keymaker_doors">Keymaker</option>
+      </select>
+      <button type="button" id="dir-force-go">Force</button>
+      <button type="button" id="dir-inject">Inject glitch</button>
+      <select id="season-arc">
+        <option value="none">season: none</option>
+        <option value="smith_infection">Smith infection</option>
+        <option value="zion_siege">Zion siege</option>
+        <option value="architect_reset">Architect reset</option>
+      </select>
+      <button type="button" id="season-set">Set arc</button>
+    </div>
+    <div class="h" id="dir-status" style="margin-top:0.35rem;color:var(--soft);font-size:0.72rem;">—</div>
+  </section>
+
+  <section class="ops-panel" id="ops-timeline">
+    <div class="k">DECISION TIMELINE</div>
+    <div class="timeline-list" id="timeline-list">Waiting…</div>
+  </section>
+
+  <section class="ops-panel" id="ops-analytics">
+    <div class="k">OUTCOME ANALYTICS</div>
+    <div class="analytics-box" id="analytics-box">Waiting…</div>
+  </section>
+
+  <section class="ops-panel" id="ops-dossiers">
+    <div class="k">CHARACTER DOSSIERS · MINDSTORE</div>
+    <div class="dossier-list" id="dossier-list">Waiting…</div>
+  </section>
+
+  <section class="ops-panel holo-panel" id="ops-emp">
+    <div class="k">SENTINEL / EMP · 3D CORE</div>
+    <canvas class="hud3d short hud3d-emp" id="emp3d"></canvas>
+    <div class="ops-row">
+      <button type="button" id="emp-pulse">EMP pulse</button>
+      <button type="button" id="emp-reset">Reset board</button>
+      <span id="emp-lbl" style="font-size:0.72rem;color:var(--soft);">heat —</span>
+    </div>
+    <div class="emp-heat" id="emp-bar"><i></i></div>
+  </section>
+
+  <section class="meters-wrap">
+    <canvas class="hud3d hud3d-meters" id="meters3d"></canvas>
+    <div class="meters meters-flat">
     <div class="meter">
       <label><span>TRACE</span><span id="m-trace-lbl">safe</span></label>
       <div class="val" id="m-trace">0</div>
@@ -307,13 +565,22 @@
       <div class="bar" id="b-tick"><i style="width:100%;opacity:.35"></i></div>
       <div class="hint">City simulation pulses this life</div>
     </div>
+    </div>
   </section>
 
   <section class="grid">
     <div class="panel">
       <div class="map-head">
         <h2>Mega City · live sectors</h2>
-        <div class="map-hint">Click sector · Move / Hardline / EMP in toolbar · red glow = Agent hunt path</div>
+        <div class="map-mode">
+          <button type="button" id="btn-map-3d" class="on">3D</button>
+          <button type="button" id="btn-map-2d">2D</button>
+        </div>
+        <div class="map-hint">Drag orbit · scroll zoom · click select · dbl-click move · red trail = hunt</div>
+      </div>
+      <div class="map3d-wrap" id="map3d-wrap">
+        <canvas id="map3d"></canvas>
+        <div class="map3d-err" id="map3d-err" hidden>Loading 3D city…</div>
       </div>
       <div class="map-board" id="map-board"></div>
       <div class="focus" id="focus">
@@ -334,14 +601,16 @@
       </div>
 
       <div class="replay-bar">
-        <span style="font-size:0.62rem;color:var(--dim);letter-spacing:0.12em">REPLAY</span>
+        <span style="font-size:0.62rem;color:var(--dim);letter-spacing:0.12em">REPLAY / EPISODE</span>
         <select id="replay-sel"><option value="">— live —</option></select>
         <button type="button" id="replay-play">Play</button>
         <button type="button" id="replay-stop">Live</button>
+        <button type="button" id="episode-export">Export TV episode</button>
+        <a id="episode-link" href="#" target="_blank" style="display:none;color:var(--green);font-size:0.72rem;">open episode</a>
       </div>
 
     </div>
-    <div class="panel">
+    <div class="panel holo-panel">
       <h2>Story feed · latest beats</h2>
       <div id="feed"></div>
     </div>
@@ -353,8 +622,9 @@
       <div class="flags" id="flags"></div>
       <div class="pills" id="physics"></div>
     </div>
-    <div class="panel tug">
-      <h2>Faction tug-of-war</h2>
+    <div class="panel tug holo-panel">
+      <h2>Faction tug-of-war · 3D</h2>
+      <canvas class="hud3d short hud3d-faction" id="faction3d"></canvas>
       <div class="track"><div class="zion" id="zion-bar" style="width:50%"></div></div>
       <div class="scores">
         <span>Zion <strong id="zion-s">0</strong></span>
@@ -565,6 +835,10 @@ function drawMap(data) {
   const heatMap = data.sector_heat || {};
   if (!selectedLoc) selectedLoc = neoLoc || 'apartment';
 
+  if (typeof window.__matrix3dUpdate === 'function') {
+    try { window.__matrix3dUpdate(data, META); } catch (e) {}
+  }
+
   const locKey = neoLoc + '|' + JSON.stringify(data.agent_positions || {}) + '|' + selectedLoc
     + '|' + hunt.join('>') + '|' + JSON.stringify(heatMap);
   if (locKey === lastLocKey && document.getElementById('map-board').children.length) {
@@ -635,6 +909,70 @@ function dangerLevel(trace, threat, positions, loc) {
   return ['CALM', 'Low Agent attention'];
 }
 
+const BRANCH_ORDER = [
+  'cafe_scene', 'merovingian_vip', 'club_hel_fight', 'keymaker_doors',
+  'city_wander', 'highway_chase', 'prepare_swarm',
+  'reconcile', 'bend_reality', 'enforce_reality',
+  'lobby_breach', 'burly_brawl', 'pursuit_loop', 'morpheus_offer'
+];
+
+function renderBranch(branch) {
+  const why = document.getElementById('branch-why');
+  const pathEl = document.getElementById('branch-path');
+  const flow = document.getElementById('branch-flow');
+  const opts = document.getElementById('branch-opts');
+  if (!why || !flow) return;
+  if (!branch || !branch.nodes) {
+    why.textContent = 'Waiting for a fork…';
+    if (pathEl) pathEl.textContent = 'path: —';
+    flow.innerHTML = '';
+    if (opts) opts.innerHTML = '';
+    return;
+  }
+  const cur = branch.current || '';
+  const predicted = branch.predicted || '';
+  const taken = new Set(branch.path || []);
+  const curLabel = (branch.nodes.find(n => n.id === cur) || {}).label || cur;
+  why.textContent = branch.fork_active
+    ? (`FORK @ ${curLabel}`
+      + (branch.why ? ' — ' + branch.why : '')
+      + (predicted ? ' → next: ' + String(predicted).replace(/_/g, ' ') : ''))
+    : (branch.why || `Now: ${curLabel || '—'}`);
+  if (pathEl) {
+    pathEl.textContent = 'path: ' + ((branch.path || []).map(p =>
+      (branch.nodes.find(n => n.id === p) || {label: p}).label
+    ).join(' → ') || '—');
+  }
+
+  const byId = Object.fromEntries((branch.nodes || []).map(n => [n.id, n]));
+  const show = BRANCH_ORDER.filter(id => byId[id]);
+  flow.innerHTML = show.map((id, i) => {
+    const n = byId[id];
+    let st = 'idle';
+    if (id === cur) st = 'current';
+    else if (id === predicted) st = 'predicted';
+    else if (taken.has(id)) st = 'taken';
+    else if ((branch.options || []).includes(id)) st = 'ahead';
+    const arrowKind = (taken.has(id) && taken.has(show[i + 1])) ? ' taken'
+      : (id === cur && show[i + 1] === predicted) ? ' predicted' : '';
+    const arrow = i < show.length - 1
+      ? `<span class="branch-arrow${arrowKind}">→</span>`
+      : '';
+    return `<span class="branch-node ${st}${n.fork ? ' fork' : ''}">${escapeHtml(n.label)}</span>${arrow}`;
+  }).join('');
+
+  if (opts) {
+    const options = branch.options || [];
+    opts.innerHTML = options.length
+      ? options.map(o => {
+          const label = (byId[o] || {label: o}).label;
+          const pick = o === predicted ? ' pick' : '';
+          return `<span class="branch-opt${pick}">${escapeHtml(label)}</span>`;
+        }).join('')
+      : '';
+  }
+}
+
 function setLive(ok, data) {
   const pill = document.getElementById('live-pill');
   const lbl = document.getElementById('live-lbl');
@@ -681,6 +1019,11 @@ function render(data) {
     ? tracks.map(t => '∥ ' + String(t)).join('   ·   ')
     : 'Single path (or waiting for parallel fan-out)';
 
+  renderBranch(data.branch);
+  if (typeof window.__hudUpdateBranch === 'function') {
+    try { window.__hudUpdateBranch(data.branch); } catch (e) {}
+  }
+
   const trace = Number(data.trace || 0);
   const threat = Number(data.threat || 0);
   const train = Number(data.training_score || 0);
@@ -694,19 +1037,39 @@ function render(data) {
   bar(document.getElementById('b-trace'), trace, trace >= 70 ? 'hot' : trace >= 40 ? 'warn' : '');
   bar(document.getElementById('b-threat'), threat * 10, threat >= 7 ? 'hot' : threat >= 4 ? 'warn' : '');
   bar(document.getElementById('b-train'), Math.min(100, train * 8), '');
+  if (typeof window.__hudUpdateMeters === 'function') {
+    try { window.__hudUpdateMeters({ trace, threat, train, tick }); } catch (e) {}
+  }
+
+  const skills = data.training_skills || [];
+  const dojo = document.getElementById('dojo-skills');
+  if (dojo) {
+    dojo.textContent = skills.length
+      ? `Score ${train} · ${skills.join(', ')}`
+      : `Score ${train} · No programs loaded`;
+  }
+  if (data.sound_cue && data.sound_cue !== lastSoundCue) {
+    lastSoundCue = data.sound_cue;
+    playCue(String(data.sound_cue));
+  }
 
   if (loc && !window._userPinned) selectedLoc = loc;
   drawMap(data);
 
   const feed = document.getElementById('feed');
   const lines = data.feed || [];
-  if (force || lines.length !== lastFeedLen) {
+  if (force || lines.length !== lastFeedLen || window._dramaDirty) {
+    window._dramaDirty = false;
     lastFeedLen = lines.length;
     const nearBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 80;
-    if (!lines.length) {
-      feed.innerHTML = `<div class="msg sys"><div class="who">SYS</div><div class="txt">${escapeHtml(data.hint || 'Waiting for signal…')}</div></div>`;
+    const drama = document.body.classList.contains('drama');
+    const visible = drama
+      ? lines.filter(raw => parseFeedLine(raw).kind === 'speak')
+      : lines;
+    if (!visible.length) {
+      feed.innerHTML = `<div class="msg sys"><div class="who">SYS</div><div class="txt">${escapeHtml(drama ? 'Audio drama — waiting for dialogue…' : (data.hint || 'Waiting for signal…'))}</div></div>`;
     } else {
-      feed.innerHTML = lines.slice(-40).map(raw => {
+      feed.innerHTML = visible.slice(-40).map(raw => {
         const p = parseFeedLine(raw);
         return `<div class="msg ${p.kind}"><div class="who">${escapeHtml(p.who)}</div><div class="txt">${escapeHtml(p.txt)}</div></div>`;
       }).join('');
@@ -741,6 +1104,9 @@ function render(data) {
   document.getElementById('zion-s').textContent = z;
   document.getElementById('agents-s').textContent = a;
   document.getElementById('zion-bar').style.width = ((z / tot) * 100) + '%';
+  if (typeof window.__hudUpdateFaction === 'function') {
+    try { window.__hudUpdateFaction({ zion: z, agents: a }); } catch (e) {}
+  }
 
   document.getElementById('physics').innerHTML = (data.physics || []).map(p =>
     `<span class="pill">${escapeHtml(String(p).replace(/_/g, ' '))}</span>`
@@ -760,6 +1126,7 @@ const params = new URLSearchParams(location.search);
 let seat = params.get('seat') || localStorage.getItem('matrix_seat') || 'operator';
 let ttsOn = (localStorage.getItem('matrix_tts') || '1') !== '0';
 let lastSpoken = '';
+let lastSoundCue = '';
 let replayTimer = null;
 
 function setSeat(s) {
@@ -809,6 +1176,51 @@ document.getElementById('btn-cctv')?.addEventListener('click', () => sendCommand
 document.getElementById('btn-emp')?.addEventListener('click', () => sendCommand('emp'));
 document.getElementById('btn-jack')?.addEventListener('click', () => sendCommand('jack_out'));
 document.getElementById('btn-skill')?.addEventListener('click', () => sendCommand('load_skill', 'jujitsu'));
+
+async function constructAction(action, skill) {
+  try {
+    await fetch('/api/construct', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ action, skill, seat })
+    });
+  } catch (e) {}
+}
+document.getElementById('btn-dojo-kung')?.addEventListener('click', () => constructAction('load', 'kung_fu'));
+document.getElementById('btn-dojo-jujitsu')?.addEventListener('click', () => constructAction('load', 'jujitsu'));
+document.getElementById('btn-dojo-spar')?.addEventListener('click', () => constructAction('spar'));
+
+/* WebAudio cue bed — soft matrix beeps */
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx && AudioCtx) audioCtx = new AudioCtx();
+  return audioCtx;
+}
+function playCue(kind) {
+  const ctx = ensureAudio();
+  if (!ctx) return;
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  const map = {
+    emp: 90, hardline: 440, jack_out: 660, jack: 520, tap: 880,
+    phone: 880, glitch: 120, agent: 180, move: 400, spar: 300
+  };
+  o.frequency.value = map[kind] || 320;
+  o.type = kind === 'glitch' ? 'sawtooth' : 'sine';
+  g.gain.value = 0.04;
+  o.connect(g); g.connect(ctx.destination);
+  o.start();
+  g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.18);
+  o.stop(ctx.currentTime + 0.2);
+}
+setInterval(() => {
+  fetch('/api/heartbeat', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ seat })
+  }).catch(() => {});
+}, 20000);
 const btnTts = document.getElementById('btn-tts');
 btnTts.textContent = ttsOn ? 'TTS on' : 'TTS off';
 btnTts.addEventListener('click', () => {
@@ -939,13 +1351,15 @@ let spokenFeedIndex = 0;
 
 function maybeSpeak(lines) {
   if (!ttsOn || !lines || !lines.length) return;
-  // Speak every new dialogue line in order (don't skip / cut mid-sentence)
+  const drama = document.body.classList.contains('drama');
   if (spokenFeedIndex > lines.length) spokenFeedIndex = 0;
   for (let i = spokenFeedIndex; i < lines.length; i++) {
     const line = lines[i];
     const p = parseFeedLine(line);
     if (p.kind === 'speak' && p.txt) {
       speakLine(p.who, p.txt);
+    } else if (!drama && p.kind === 'scene' && p.txt && p.txt.length < 80) {
+      // skip system noise in drama; otherwise ignore non-dialogue
     }
   }
   spokenFeedIndex = lines.length;
@@ -995,6 +1409,89 @@ async function refreshMetrics() {
     el.innerHTML = cells.map(([k,v]) =>
       `<div class="m"><div class="k">${k}</div><div class="v">${escapeHtml(String(v))}</div></div>`
     ).join('');
+    const box = document.getElementById('analytics-box');
+    if (box && m.analytics) {
+      const a = m.analytics;
+      const endings = a.ending_buckets || {};
+      const branches = a.branch_frequencies || {};
+      const catchPct = a.chase_catch_rate == null ? '—' : Math.round(a.chase_catch_rate * 100) + '%';
+      const season = a.season || {};
+      box.innerHTML = [
+        `<div class="row"><span>Catch rate</span><strong>${catchPct}</strong></div>`,
+        `<div class="row"><span>Season</span><strong>${escapeHtml((season.arc || 'none') + ' · p' + (season.phase || 0))}</strong></div>`,
+        '<div style="margin-top:0.35rem;color:var(--dim)">Endings</div>',
+        ...Object.entries(endings).map(([k,v]) =>
+          `<div class="row"><span>${escapeHtml(k)}</span><strong>${v}</strong></div>`),
+        '<div style="margin-top:0.35rem;color:var(--dim)">Branches</div>',
+        ...Object.entries(branches).slice(0, 8).map(([k,v]) =>
+          `<div class="row"><span>${escapeHtml(k)}</span><strong>${v}</strong></div>`),
+      ].join('') || 'No replay data yet';
+    }
+  } catch (e) {}
+}
+
+async function refreshOpsPanels() {
+  try {
+    const [t, d, dir, emp, sea, lob] = await Promise.all([
+      fetch('/api/timeline?limit=40').then(r => r.json()),
+      fetch('/api/dossiers').then(r => r.json()),
+      fetch('/api/director').then(r => r.json()),
+      fetch('/api/emp-game').then(r => r.json()),
+      fetch('/api/season').then(r => r.json()),
+      fetch('/api/lobby').then(r => r.json()).catch(() => ({})),
+    ]);
+    const tl = document.getElementById('timeline-list');
+    if (tl) {
+      const rows = (t.timeline || []).slice().reverse();
+      tl.innerHTML = rows.length
+        ? rows.map(x =>
+            `<div><strong>${escapeHtml(x.kind)}</strong> → ${escapeHtml(x.choice || '—')}`
+            + `<div style="color:var(--dim)">${escapeHtml(x.why || '')}</div></div>`
+          ).join('')
+        : 'No decisions yet';
+    }
+    const dl = document.getElementById('dossier-list');
+    if (dl) {
+      dl.innerHTML = (d.dossiers || []).slice(0, 12).map(x =>
+        `<div><strong>${escapeHtml(x.character)}</strong> · ${escapeHtml(x.allegiance || '')}`
+        + ` · neo@${escapeHtml(x.last_neo || '—')}`
+        + (x.grudge ? `<div style="color:var(--warn)">${escapeHtml(x.grudge)}</div>` : '')
+        + `<div style="color:var(--dim)">${escapeHtml((x.facts || []).slice(-2).join(' · '))}</div></div>`
+      ).join('') || 'Empty minds';
+    }
+    const ds = document.getElementById('dir-status');
+    if (ds) {
+      const beat = sea.beat ? ` · ${sea.beat.slice(0, 60)}` : '';
+      ds.textContent = `paused=${!!dir.paused} · force=${dir.force_branch || '—'} · season=${sea.arc || 'none'} p${sea.phase || 0}${beat}`;
+    }
+    const ls = document.getElementById('lobby-status');
+    if (ls) {
+      const seats = lob.seats || {};
+      const seatBits = Object.keys(seats).map(k => {
+        const s = seats[k] || {};
+        return `${k}${s.online ? '●' : '○'}:${s.name || k}`;
+      });
+      ls.textContent = lob.open
+        ? `code ${lob.code} · ${seatBits.join(' · ') || 'empty seats'}`
+        : 'no lobby — create one to share a join code';
+    }
+    const empLbl = document.getElementById('emp-lbl');
+    const empBar = document.getElementById('emp-bar');
+    if (empLbl) {
+      empLbl.textContent = emp.alive === false
+        ? `DESTROYED · score ${emp.score || 0}`
+        : `heat ${Math.round(emp.heat || 0)} · charges ${emp.charges || 0} · score ${emp.score || 0}`;
+    }
+    if (empBar) {
+      const pct = Math.max(0, Math.min(100, Number(emp.heat || 0)));
+      empBar.querySelector('i').style.width = pct + '%';
+      empBar.querySelector('i').style.background = pct >= 80 ? '#ff3b3b' : pct >= 50 ? 'var(--warn)' : 'var(--green)';
+    }
+    if (typeof window.__hudUpdateEmp === 'function') {
+      try {
+        window.__hudUpdateEmp({ heat: emp.heat, alive: emp.alive !== false });
+      } catch (e) {}
+    }
   } catch (e) {}
 }
 
@@ -1073,8 +1570,225 @@ connectSSE();
 setInterval(load, 2000);
 refreshMetrics();
 refreshReplays();
+refreshOpsPanels();
 setInterval(refreshMetrics, 8000);
 setInterval(refreshReplays, 15000);
+setInterval(refreshOpsPanels, 5000);
+
+async function postJson(url, body) {
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body || {}),
+  });
+  return r.json();
+}
+
+document.getElementById('dir-pause')?.addEventListener('click', async () => {
+  await postJson('/api/director', { action: 'pause' });
+  refreshOpsPanels();
+});
+document.getElementById('dir-resume')?.addEventListener('click', async () => {
+  await postJson('/api/director', { action: 'resume' });
+  refreshOpsPanels();
+});
+document.getElementById('dir-force-go')?.addEventListener('click', async () => {
+  const target = document.getElementById('dir-force').value;
+  if (!target) return;
+  await postJson('/api/director', { action: 'force', target });
+  refreshOpsPanels();
+});
+document.getElementById('dir-inject')?.addEventListener('click', async () => {
+  await postJson('/api/director', { action: 'inject', event: 'glitch', detail: 'Director glitch pulse' });
+  refreshOpsPanels();
+});
+document.getElementById('season-set')?.addEventListener('click', async () => {
+  const arc = document.getElementById('season-arc').value;
+  await postJson('/api/season', { arc });
+  refreshOpsPanels();
+  refreshMetrics();
+});
+document.getElementById('emp-pulse')?.addEventListener('click', async () => {
+  await postJson('/api/emp-game', { action: 'pulse' });
+  refreshOpsPanels();
+});
+document.getElementById('emp-reset')?.addEventListener('click', async () => {
+  await postJson('/api/emp-game', { action: 'reset' });
+  refreshOpsPanels();
+});
+document.getElementById('lobby-create')?.addEventListener('click', async () => {
+  const out = await postJson('/api/lobby', { action: 'create', host: seat || 'operator' });
+  const codeEl = document.getElementById('lobby-code');
+  if (codeEl && out.code) codeEl.value = out.code;
+  refreshOpsPanels();
+});
+document.getElementById('lobby-join')?.addEventListener('click', async () => {
+  const code = document.getElementById('lobby-code')?.value || '';
+  const joinSeat = document.getElementById('lobby-seat')?.value || seat || 'operator';
+  const name = document.getElementById('lobby-name')?.value || '';
+  const out = await postJson('/api/lobby', { action: 'join', code, seat: joinSeat, name });
+  if (out.ok && out.seat) {
+    const u = new URL(window.location.href);
+    u.searchParams.set('seat', out.seat);
+    window.history.replaceState({}, '', u);
+    if (typeof setSeat === 'function') setSeat(out.seat);
+    else seat = out.seat;
+  }
+  refreshOpsPanels();
+});
+document.getElementById('lobby-leave')?.addEventListener('click', async () => {
+  await postJson('/api/lobby', { action: 'leave', seat: seat || 'operator' });
+  refreshOpsPanels();
+});
+document.getElementById('agency-go')?.addEventListener('click', async () => {
+  const command = document.getElementById('agency-cmd')?.value || 'move';
+  const target = document.getElementById('agency-target')?.value || '';
+  await postJson('/api/agency', { seat: seat || 'operator', command, target });
+  refreshOpsPanels();
+});
+document.getElementById('episode-export')?.addEventListener('click', async () => {
+  const id = document.getElementById('replay-sel')?.value || '';
+  const out = await postJson('/api/episode', { replay_id: id || null });
+  const link = document.getElementById('episode-link');
+  if (out.ok && out.url && link) {
+    link.href = out.url;
+    link.style.display = 'inline';
+    link.textContent = out.html || 'open episode';
+  }
+});
+document.getElementById('btn-drama')?.addEventListener('click', () => {
+  document.body.classList.toggle('drama');
+  const on = document.body.classList.contains('drama');
+  document.getElementById('btn-drama').textContent = on ? 'Drama on' : 'Drama';
+  window._dramaDirty = true;
+  if (lastData) render(lastData);
+});
+document.getElementById('btn-compact')?.addEventListener('click', () => {
+  document.body.classList.toggle('compact');
+  const on = document.body.classList.contains('compact');
+  document.getElementById('btn-compact').textContent = on ? 'Compact on' : 'Compact';
+});
+
+function setMapMode(mode) {
+  document.body.classList.toggle('map-3d', mode === '3d');
+  document.body.classList.toggle('map-2d', mode === '2d');
+  document.getElementById('btn-map-3d')?.classList.toggle('on', mode === '3d');
+  document.getElementById('btn-map-2d')?.classList.toggle('on', mode === '2d');
+  localStorage.setItem('matrix_map_mode', mode);
+  if (mode === '3d') {
+    window.__matrix3dBoot?.(true);
+    setTimeout(() => window.__matrix3dResize?.(), 50);
+  }
+  if (lastData) {
+    lastLocKey = '';
+    drawMap(lastData);
+  }
+}
+document.getElementById('btn-map-3d')?.addEventListener('click', () => setMapMode('3d'));
+document.getElementById('btn-map-2d')?.addEventListener('click', () => setMapMode('2d'));
+// Prefer 3D; ignore stale localStorage "2d" from earlier CDN failures
+const _savedMap = localStorage.getItem('matrix_map_mode');
+setMapMode(_savedMap === '2d' && sessionStorage.getItem('matrix_3d_ok') ? '2d' : '3d');
+
+/* —— 3D Mega City (local Three.js — no CDN) —— */
+(async function bootCity3D() {
+  const canvas = document.getElementById('map3d');
+  const errEl = document.getElementById('map3d-err');
+  if (!canvas) return;
+  let booting = false;
+
+  async function start(force) {
+    if (window.__matrix3dReady && !force) {
+      window.__matrix3dResize?.();
+      return;
+    }
+    if (booting) return;
+    booting = true;
+    if (errEl) {
+      errEl.hidden = false;
+      errEl.textContent = 'Loading 3D city…';
+    }
+    try {
+      const mod = await import('/static/console3d.js?v=2');
+      const { initCity3D, updateCity3D, resizeCity3D, isCity3DReady } = mod;
+      if (!isCity3DReady()) {
+        initCity3D(canvas, {
+          meta: META,
+          onSelect: (id) => {
+            selectedLoc = id;
+            window._userPinned = true;
+            setTimeout(() => { window._userPinned = false; }, 8000);
+            if (lastData) {
+              lastLocKey = '';
+              drawMap(lastData);
+            }
+          },
+          onMove: (id) => {
+            selectedLoc = id;
+            sendCommand('move', id);
+          },
+        });
+      }
+      window.__matrix3dUpdate = (data, meta) => updateCity3D(data, meta || META);
+      window.__matrix3dResize = () => resizeCity3D();
+      window.__matrix3dReady = true;
+      sessionStorage.setItem('matrix_3d_ok', '1');
+      if (errEl) errEl.hidden = true;
+      resizeCity3D();
+      if (lastData) updateCity3D(lastData, META);
+    } catch (err) {
+      console.warn('3D map failed', err);
+      if (errEl) {
+        errEl.hidden = false;
+        errEl.textContent = '3D map failed to load — click 2D, or hard-refresh. ' + (err && err.message ? err.message : '');
+      }
+    } finally {
+      booting = false;
+    }
+  }
+
+  window.__matrix3dBoot = start;
+  await start(false);
+})();
+
+/* —— 3D HUD: meters / branch / faction / EMP —— */
+(async function bootHud3D() {
+  try {
+    const hud = await import('/static/console3d_hud.js?v=1');
+    hud.bootAllHud({
+      meters: document.getElementById('meters3d'),
+      branch: document.getElementById('branch3d'),
+      faction: document.getElementById('faction3d'),
+      emp: document.getElementById('emp3d'),
+    });
+    window.__hudUpdateMeters = hud.updateMeters3D;
+    window.__hudUpdateBranch = hud.updateBranch3D;
+    window.__hudUpdateFaction = hud.updateFaction3D;
+    window.__hudUpdateEmp = hud.updateEmp3D;
+    if (lastData) {
+      hud.updateMeters3D({
+        trace: lastData.trace,
+        threat: lastData.threat,
+        train: lastData.training_score,
+        tick: lastData.world_tick,
+      });
+      hud.updateBranch3D(lastData.branch);
+      const board = lastData.faction_scoreboard || {};
+      hud.updateFaction3D({ zion: board.zion || 0, agents: board.agents || 0 });
+    }
+  } catch (err) {
+    console.warn('3D HUD failed', err);
+  }
+})();
+
+document.getElementById('btn-flat-hud')?.addEventListener('click', () => {
+  document.body.classList.toggle('flat-hud');
+  const flat = document.body.classList.contains('flat-hud');
+  document.getElementById('btn-flat-hud').textContent = flat ? 'HUD flat' : 'HUD 3D';
+  // show 2D branch flow when flat
+  const flow = document.getElementById('branch-flow');
+  if (flow) flow.hidden = !flat;
+});
 </script>
 </body>
 </html>

@@ -103,6 +103,10 @@ def _context_summary(values: dict) -> str:
 
 def run_one_cycle(human_id: str = "neo", co_human_id: str = "") -> dict:
     """Run one full auto jack-in using Operator brain for every HITL."""
+    from matrix.director import pop_injects, wait_if_paused
+    from matrix.timeline import record
+
+    wait_if_paused()
     reset_graph_cache()
     graph = get_graph()
     thread_id = new_thread_id(human_id)
@@ -113,7 +117,20 @@ def run_one_cycle(human_id: str = "neo", co_human_id: str = "") -> dict:
         "co_human_id": co_human_id,
         "agent_memory": [],
         "character_actions": [],
+        "wander_hops": 0,
     }
+
+    injects = pop_injects()
+    if injects:
+        lines = [f"DIRECTOR inject: {i.get('event')} {i.get('detail') or ''}".strip() for i in injects]
+        dashboard.publish({"feed_append": lines, "status": "director_inject"})
+        for item in injects:
+            record(
+                kind="inject",
+                choice=str(item.get("event") or ""),
+                why=str(item.get("detail") or ""),
+                scene="pre_cycle",
+            )
 
     _log(f"CYCLE START thread={thread_id} co={co_human_id or '-'}")
     matrix_rain.rain(0.4)
@@ -168,12 +185,23 @@ def run_one_cycle(human_id: str = "neo", co_human_id: str = "") -> dict:
         )
 
         choice = wait_for_choice(thread_id, timeout=matrix_config.hitl_wait)
+        source = "console"
         if choice:
             _log(f"CONSOLE chose kind={kind} → {choice}")
         else:
             choice = operator_choose(kind, options, _context_summary(result))
+            source = "operator_brain"
             _log(f"OPERATOR brain chose kind={kind} → {choice}")
             clear_pending()
+
+        from matrix.timeline import record as timeline_record
+
+        timeline_record(
+            kind=kind,
+            choice=str(choice),
+            why=source,
+            scene=str(result.get("scene") or ""),
+        )
 
         dashboard.publish(
             {
@@ -204,12 +232,38 @@ def run_one_cycle(human_id: str = "neo", co_human_id: str = "") -> dict:
         }
     )
     try:
+        from matrix.season import advance_from_life
+        from matrix.timeline import record as timeline_record
+        from matrix.emp_game import sync_from_state
+
+        season = advance_from_life(result)
+        sync_from_state(result)
+        timeline_record(
+            kind="outcome",
+            choice=str(result.get("outcome") or ""),
+            why=f"awakened={result.get('awakened')} meta={result.get('meta_policy')}",
+            scene="cycle_end",
+            meta={"season": season},
+        )
+        dashboard.publish({"season": season})
+    except Exception as exc:  # noqa: BLE001
+        _log(f"SEASON/timeline skip: {exc}")
+    try:
         from matrix.replay import save_life
         from matrix.dashboard import read_status
 
         feed = list((read_status() or {}).get("feed") or [])
         path = save_life(result, feed=feed)
         _log(f"REPLAY saved {path.name}")
+        try:
+            from matrix.episode import export_episode
+
+            ep = export_episode(path.name)
+            if ep.get("ok"):
+                _log(f"EPISODE exported {ep.get('html')}")
+                dashboard.publish({"episode": ep, "feed_append": [f"EPISODE → {ep.get('url')}"]})
+        except Exception as ep_exc:  # noqa: BLE001
+            _log(f"EPISODE export skipped: {ep_exc}")
     except Exception as exc:  # noqa: BLE001
         _log(f"REPLAY save skipped: {exc}")
     _log(

@@ -1,0 +1,797 @@
+[
+  {
+    "at": 1785130447.762146,
+    "kind": "architect_tree",
+    "choice": "consult_oracle",
+    "why": "Threat 4/10 \u2014 consult Oracle before cafe.",
+    "scene": "architect",
+    "cycle": null,
+    "meta": {
+      "threat": 4,
+      "goto": "oracle_question"
+    }
+  },
+  {
+    "at": 1785130466.9275908,
+    "kind": "architect_tree",
+    "choice": "consult_oracle",
+    "why": "Threat 4/10 \u2014 consult Oracle before cafe.",
+    "scene": "architect",
+    "cycle": null,
+    "meta": {
+      "threat": 4,
+      "goto": "oracle_question"
+    }
+  },
+  {
+    "at": 1785130466.928233,
+    "kind": "architect_tree",
+    "choice": "deploy_cafe",
+    "why": "Threat 9/10 \u2014 deploy cafe anomaly site.",
+    "scene": "architect",
+    "cycle": null,
+    "meta": {
+      "threat": 9,
+      "goto": "cafe_scene"
+    }
+  },
+  {
+    "at": 1785130546.6965802,
+    "kind": "bug",
+    "choice": "extract",
+    "why": "operator_brain",
+    "scene": "interrogation",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785130596.519399,
+    "kind": "trust",
+    "choice": "walk",
+    "why": "operator_brain",
+    "scene": "contact",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785130613.664604,
+    "kind": "architect_tree",
+    "choice": "quarantine_anomaly",
+    "why": "Threat 7/10 \u2014 quarantine \u2192 cafe under lock.",
+    "scene": "architect",
+    "cycle": null,
+    "meta": {
+      "threat": 7,
+      "goto": "cafe_scene"
+    }
+  },
+  {
+    "at": 1785130862.1756768,
+    "kind": "bug",
+    "choice": "extract",
+    "why": "operator_brain",
+    "scene": "interrogation",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785130920.1126552,
+    "kind": "trust",
+    "choice": "walk",
+    "why": "operator_brain",
+    "scene": "contact",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785130927.815039,
+    "kind": "architect_tree",
+    "choice": "consult_oracle",
+    "why": "Threat 4/10 \u2014 consult Oracle before cafe.",
+    "scene": "architect",
+    "cycle": null,
+    "meta": {
+      "threat": 4,
+      "goto": "oracle_question"
+    }
+  },
+  {
+    "at": 1785130927.8159301,
+    "kind": "architect_tree",
+    "choice": "deploy_cafe",
+    "why": "Threat 9/10 \u2014 deploy cafe anomaly site.",
+    "scene": "architect",
+    "cycle": null,
+    "meta": {
+      "threat": 9,
+      "goto": "cafe_scene"
+    }
+  },
+  {
+    "at": 1785130938.2161689,
+    "kind": "architect_tree",
+    "choice": "consult_oracle",
+    "why": "Threat 5/10 \u2014 consult Oracle before cafe.",
+    "scene": "architect",
+    "cycle": null,
+    "meta": {
+      "threat": 5,
+      "goto": "oracle_question"
+    }
+  },
+  {
+    "at": 1785130977.417227,
+    "kind": "oracle_question",
+    "choice": "What is the Matrix?",
+    "why": "seat=operator \u00b7 Ask the Oracle a question (free text).",
+    "scene": "oracle_question",
+    "cycle": null,
+    "meta": {
+      "seat": "operator"
+    }
+  },
+  {
+    "at": 1785130981.213247,
+    "kind": "oracle_question",
+    "choice": "What is the Matrix?",
+    "why": "seat=operator \u00b7 Ask the Oracle a question (free text).",
+    "scene": "oracle_question",
+    "cycle": null,
+    "meta": {
+      "seat": "operator"
+    }
+  },
+  {
+    "at": 1785131005.854483,
+    "kind": "oracle_question",
+    "choice": "What is the Matrix?",
+    "why": "seat=operator \u00b7 Ask the Oracle a question (free text).",
+    "scene": "oracle_question",
+    "cycle": null,
+    "meta": {
+      "seat": "operator"
+    }
+  },
+  {
+    "at": 1785131007.020685,
+    "kind": "oracle_question",
+    "choice": "Am I the One?",
+    "why": "seat=operator \u00b7 Ask the Oracle a question (free text).",
+    "scene": "oracle_question",
+    "cycle": null,
+    "meta": {
+      "seat": "operator"
+    }
+  },
+  {
+    "at": 1785131008.12192,
+    "kind": "oracle_question",
+    "choice": "Why am I here?",
+    "why": "seat=operator \u00b7 Ask the Oracle a question (free text).",
+    "scene": "oracle_question",
+    "cycle": null,
+    "meta": {
+      "seat": "operator"
+    }
+  },
+  {
+    "at": 1785131008.775073,
+    "kind": "oracle_question",
+    "choice": "Why am I here?",
+    "why": "seat=operator \u00b7 Ask the Oracle a question (free text).",
+    "scene": "oracle_question",
+    "cycle": null,
+    "meta": {
+      "seat": "operator"
+    }
+  },
+  {
+    "at": 1785131009.42686,
+    "kind": "oracle_question",
+    "choice": "What is the Matrix?",
+    "why": "seat=operator \u00b7 Ask the Oracle a question (free text).",
+    "scene": "oracle_question",
+    "cycle": null,
+    "meta": {
+      "seat": "operator"
+    }
+  },
+  {
+    "at": 1785131013.495129,
+    "kind": "bug",
+    "choice": "extract",
+    "why": "seat=operator \u00b7 Let Trinity extract the bug (extract) or refuse (refuse).",
+    "scene": "bug",
+    "cycle": null,
+    "meta": {
+      "seat": "operator"
+    }
+  },
+  {
+    "at": 1785131013.725764,
+    "kind": "bug",
+    "choice": "extract",
+    "why": "console",
+    "scene": "interrogation",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785131078.094909,
+    "kind": "trust",
+    "choice": "walk",
+    "why": "operator_brain",
+    "scene": "contact",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785131093.6066718,
+    "kind": "architect_tree",
+    "choice": "quarantine_anomaly",
+    "why": "Threat 7/10 \u2014 quarantine \u2192 cafe under lock.",
+    "scene": "architect",
+    "cycle": null,
+    "meta": {
+      "threat": 7,
+      "goto": "cafe_scene"
+    }
+  },
+  {
+    "at": 1785131281.777199,
+    "kind": "pill",
+    "choice": "red",
+    "why": "operator_brain",
+    "scene": "pill",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785131348.90374,
+    "kind": "bug",
+    "choice": "extract",
+    "why": "seat=operator \u00b7 Let Trinity extract the bug (extract) or refuse (refuse).",
+    "scene": "bug",
+    "cycle": null,
+    "meta": {
+      "seat": "operator"
+    }
+  },
+  {
+    "at": 1785131349.1333828,
+    "kind": "bug",
+    "choice": "extract",
+    "why": "console",
+    "scene": "interrogation",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785131410.670667,
+    "kind": "trust",
+    "choice": "trust",
+    "why": "seat=operator \u00b7 Trust Trinity (trust) or walk away (walk).",
+    "scene": "trust",
+    "cycle": null,
+    "meta": {
+      "seat": "operator"
+    }
+  },
+  {
+    "at": 1785131410.7909381,
+    "kind": "trust",
+    "choice": "trust",
+    "why": "console",
+    "scene": "contact",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785131422.3543181,
+    "kind": "architect_tree",
+    "choice": "quarantine_anomaly",
+    "why": "Threat 4/10 \u2014 quarantine \u2192 cafe under lock.",
+    "scene": "architect",
+    "cycle": null,
+    "meta": {
+      "threat": 4,
+      "goto": "cafe_scene"
+    }
+  },
+  {
+    "at": 1785131603.850278,
+    "kind": "pill",
+    "choice": "red",
+    "why": "operator_brain",
+    "scene": "pill",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785131655.534708,
+    "kind": "steak",
+    "choice": "steak",
+    "why": "operator_brain",
+    "scene": "dinner",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785131739.0829902,
+    "kind": "jump",
+    "choice": "jump",
+    "why": "operator_brain",
+    "scene": "construct",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785131766.244116,
+    "kind": "fight_or_flee",
+    "choice": "fight",
+    "why": "operator_brain",
+    "scene": "construct",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785131816.2055428,
+    "kind": "radio",
+    "choice": "call",
+    "why": "operator_brain",
+    "scene": "construct",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785131838.755712,
+    "kind": "code",
+    "choice": "accept",
+    "why": "seat=operator \u00b7 Accept the code vision (accept) or deny it (deny).",
+    "scene": "code",
+    "cycle": null,
+    "meta": {
+      "seat": "operator"
+    }
+  },
+  {
+    "at": 1785131838.75884,
+    "kind": "code",
+    "choice": "accept",
+    "why": "console",
+    "scene": "construct",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785131887.299318,
+    "kind": "outcome",
+    "choice": "neo extracts_bug=extract, trusts=trust, steak=steak, jumps=jump, score=11, fights Smith (won), radio=call, sees the code \u2014 The One begins.",
+    "why": "awakened=True meta=balance",
+    "scene": "cycle_end",
+    "cycle": null,
+    "meta": {
+      "season": {
+        "arc": "none",
+        "phase": 0,
+        "progress": 0,
+        "notes": [],
+        "updated_at": 0
+      }
+    }
+  },
+  {
+    "at": 1785131996.219554,
+    "kind": "bug",
+    "choice": "extract",
+    "why": "operator_brain",
+    "scene": "interrogation",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785132057.295342,
+    "kind": "trust",
+    "choice": "walk",
+    "why": "operator_brain",
+    "scene": "contact",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785132076.365651,
+    "kind": "architect_tree",
+    "choice": "quarantine_anomaly",
+    "why": "Threat 7/10 \u2014 quarantine \u2192 cafe under lock.",
+    "scene": "architect",
+    "cycle": null,
+    "meta": {
+      "threat": 7,
+      "goto": "cafe_scene"
+    }
+  },
+  {
+    "at": 1785132255.6994402,
+    "kind": "pill",
+    "choice": "red",
+    "why": "operator_brain",
+    "scene": "pill",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785132310.2974231,
+    "kind": "steak",
+    "choice": "steak",
+    "why": "operator_brain",
+    "scene": "dinner",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785132389.586438,
+    "kind": "jump",
+    "choice": "jump",
+    "why": "operator_brain",
+    "scene": "construct",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785132417.534327,
+    "kind": "fight_or_flee",
+    "choice": "fight",
+    "why": "operator_brain",
+    "scene": "construct",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785132470.9676511,
+    "kind": "radio",
+    "choice": "call",
+    "why": "operator_brain",
+    "scene": "construct",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785132502.146334,
+    "kind": "code",
+    "choice": "accept",
+    "why": "operator_brain",
+    "scene": "construct",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785132537.0440478,
+    "kind": "outcome",
+    "choice": "neo extracts_bug=extract, trusts=walk, steak=steak, jumps=jump, score=12, fights Smith (won), radio=call, sees the code \u2014 The One begins.",
+    "why": "awakened=True meta=control",
+    "scene": "cycle_end",
+    "cycle": null,
+    "meta": {
+      "season": {
+        "arc": "none",
+        "phase": 0,
+        "progress": 0,
+        "notes": [],
+        "updated_at": 0
+      }
+    }
+  },
+  {
+    "at": 1785132642.420183,
+    "kind": "bug",
+    "choice": "extract",
+    "why": "operator_brain",
+    "scene": "interrogation",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785132696.596608,
+    "kind": "trust",
+    "choice": "walk",
+    "why": "operator_brain",
+    "scene": "contact",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785132714.141898,
+    "kind": "architect_tree",
+    "choice": "quarantine_anomaly",
+    "why": "Threat 5/10 \u2014 quarantine \u2192 cafe under lock.",
+    "scene": "architect",
+    "cycle": null,
+    "meta": {
+      "threat": 5,
+      "goto": "cafe_scene"
+    }
+  },
+  {
+    "at": 1785132877.3800478,
+    "kind": "pill",
+    "choice": "red",
+    "why": "operator_brain",
+    "scene": "pill",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785132933.327842,
+    "kind": "steak",
+    "choice": "steak",
+    "why": "operator_brain",
+    "scene": "dinner",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785133014.2439601,
+    "kind": "jump",
+    "choice": "jump",
+    "why": "operator_brain",
+    "scene": "construct",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785133042.2019541,
+    "kind": "fight_or_flee",
+    "choice": "fight",
+    "why": "operator_brain",
+    "scene": "construct",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785133094.4304152,
+    "kind": "radio",
+    "choice": "call",
+    "why": "operator_brain",
+    "scene": "construct",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785133127.037091,
+    "kind": "code",
+    "choice": "accept",
+    "why": "operator_brain",
+    "scene": "construct",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785133165.608703,
+    "kind": "outcome",
+    "choice": "neo extracts_bug=extract, trusts=walk, steak=steak, jumps=jump, score=12, fights Smith (won), radio=call, sees the code \u2014 The One begins.",
+    "why": "awakened=True meta=choice",
+    "scene": "cycle_end",
+    "cycle": null,
+    "meta": {
+      "season": {
+        "arc": "none",
+        "phase": 0,
+        "progress": 0,
+        "notes": [],
+        "updated_at": 0
+      }
+    }
+  },
+  {
+    "at": 1785133278.333707,
+    "kind": "bug",
+    "choice": "extract",
+    "why": "operator_brain",
+    "scene": "interrogation",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785133340.990804,
+    "kind": "trust",
+    "choice": "walk",
+    "why": "operator_brain",
+    "scene": "contact",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785133361.062936,
+    "kind": "architect_tree",
+    "choice": "consult_oracle",
+    "why": "Threat 5/10 \u2014 consult Oracle before cafe.",
+    "scene": "architect",
+    "cycle": null,
+    "meta": {
+      "threat": 5,
+      "goto": "oracle_question"
+    }
+  },
+  {
+    "at": 1785133373.675792,
+    "kind": "oracle_question",
+    "choice": "Am I the One?",
+    "why": "operator_brain",
+    "scene": "architect",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785133552.069482,
+    "kind": "pill",
+    "choice": "red",
+    "why": "operator_brain",
+    "scene": "pill",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785133609.769145,
+    "kind": "steak",
+    "choice": "steak",
+    "why": "operator_brain",
+    "scene": "dinner",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785133696.8081741,
+    "kind": "jump",
+    "choice": "jump",
+    "why": "operator_brain",
+    "scene": "construct",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785133728.916745,
+    "kind": "fight_or_flee",
+    "choice": "fight",
+    "why": "operator_brain",
+    "scene": "construct",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785133787.715018,
+    "kind": "radio",
+    "choice": "call",
+    "why": "operator_brain",
+    "scene": "construct",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785133824.003789,
+    "kind": "code",
+    "choice": "accept",
+    "why": "operator_brain",
+    "scene": "construct",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785133863.920958,
+    "kind": "outcome",
+    "choice": "neo extracts_bug=extract, trusts=walk, steak=steak, jumps=jump, score=12, fights Smith (won), radio=call, sees the code \u2014 The One begins.",
+    "why": "awakened=True meta=choice",
+    "scene": "cycle_end",
+    "cycle": null,
+    "meta": {
+      "season": {
+        "arc": "none",
+        "phase": 0,
+        "progress": 0,
+        "notes": [],
+        "updated_at": 0
+      }
+    }
+  },
+  {
+    "at": 1785133982.808767,
+    "kind": "bug",
+    "choice": "extract",
+    "why": "operator_brain",
+    "scene": "interrogation",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785134042.86337,
+    "kind": "trust",
+    "choice": "walk",
+    "why": "operator_brain",
+    "scene": "contact",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785134060.962722,
+    "kind": "architect_tree",
+    "choice": "quarantine_anomaly",
+    "why": "Threat 7/10 \u2014 quarantine \u2192 cafe under lock.",
+    "scene": "architect",
+    "cycle": null,
+    "meta": {
+      "threat": 7,
+      "goto": "cafe_scene"
+    }
+  },
+  {
+    "at": 1785134234.3153222,
+    "kind": "architect_tree",
+    "choice": "consult_oracle",
+    "why": "Threat 4/10 \u2014 consult Oracle before cafe.",
+    "scene": "architect",
+    "cycle": null,
+    "meta": {
+      "threat": 4,
+      "goto": "oracle_question"
+    }
+  },
+  {
+    "at": 1785134245.8251572,
+    "kind": "architect_tree",
+    "choice": "consult_oracle",
+    "why": "Threat 4/10 \u2014 consult Oracle before cafe.",
+    "scene": "architect",
+    "cycle": null,
+    "meta": {
+      "threat": 4,
+      "goto": "oracle_question"
+    }
+  },
+  {
+    "at": 1785134245.826476,
+    "kind": "architect_tree",
+    "choice": "deploy_cafe",
+    "why": "Threat 9/10 \u2014 deploy cafe anomaly site.",
+    "scene": "architect",
+    "cycle": null,
+    "meta": {
+      "threat": 9,
+      "goto": "cafe_scene"
+    }
+  },
+  {
+    "at": 1785134266.083572,
+    "kind": "pill",
+    "choice": "red",
+    "why": "operator_brain",
+    "scene": "pill",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785134325.014059,
+    "kind": "steak",
+    "choice": "steak",
+    "why": "operator_brain",
+    "scene": "dinner",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785134412.864217,
+    "kind": "jump",
+    "choice": "jump",
+    "why": "operator_brain",
+    "scene": "construct",
+    "cycle": null,
+    "meta": {}
+  },
+  {
+    "at": 1785134442.293464,
+    "kind": "fight_or_flee",
+    "choice": "fight",
+    "why": "operator_brain",
+    "scene": "construct",
+    "cycle": null,
+    "meta": {}
+  }
+]

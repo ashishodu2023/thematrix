@@ -30,11 +30,25 @@ Console features:
 - **Multi-seat** tabs (`?seat=neo|trinity|operator`) + **human TTS** (macOS `say` voices per character; browser fallback)  
 - **PARALLEL TRACKS** (Neo story ∥ Agent field)  
 - **District map** with cast chips, **Agent hunt path**, sector **HEAT**, dbl-click move  
+- **3D Mega City** map (Three.js) — orbit / zoom / click sectors; toggle **2D** anytime  
+- **3D HUD** — meters towers, branch graph, faction tug, EMP core (+ holographic panels)  
 - **Operator tools**: Move / Linger / Hardline / Tap / CCTV / EMP / Jack-out / Load skill  
 - **Seat-aware HITL** (Neo vs Trinity vs Operator)  
 - **Replay theater 2.0** (cast moves + meters scrub) + **metrics**  
 - Mission flags + accumulating Zion vs Agents tug-of-war  
-- Expanded cast: Niobe / Persephone / Seraph + highway chase beat  
+- **Construct dojo** panel (load skills / spar) + operator tools  
+- **Open-world branch** after Keymaker (wander vs highway)  
+- **RAG memory** into character decisions + bindable `TOOL:` lines  
+- **Multi-seat voting** for dual HITLs (`MATRIX_MULTI_SEAT=1`)  
+- Docker binds `0.0.0.0:8765` with healthchecks  
+- **Director mode** (pause / force branch / inject) + **season arcs**  
+- **Decision timeline** + **outcome analytics** + **MindStore dossiers**  
+- **Audio drama** / **compact** layouts · **Sentinel EMP** mini-game  
+- **Open city** forks (Club Hel, multi-hop wander, Burly Brawl)  
+- Embedding RAG (Ollama `nomic-embed-text` when available, hash fallback) · `bind_tools` **on by default** (`MATRIX_BIND_TOOLS=0` to disable)  
+- **True multiplayer** agency queues + **networked lobby** join codes  
+- **TV episode export** from replays · fuller **3D Mega City** · EMP → ship outcomes  
+- Durable anomaly monitor: `./scripts/anomaly_monitor.sh start`
 
 Docker (Redis + app; Ollama on host):
 
@@ -240,6 +254,11 @@ Put these in your shell profile or prefix every `uv run` command.
 | `MATRIX_HITL_WAIT` | `45` | Seconds to wait for console HITL before Operator LLM fallback |
 | `MATRIX_DIFFICULTY` | `balanced` | Preset: `cinematic` / `balanced` / `fast` / `tiny` |
 | `MATRIX_TTS` | `1` | Console speech — macOS `say` (Samantha/Daniel/…) or natural browser voices |
+| `MATRIX_OPEN_CITY` | `1` | Freer Act II travel (wander loops, Club Hel, Burly Brawl) |
+| `MATRIX_BIND_TOOLS` | `1` | LangChain `bind_tools` pass (set `0` to disable) |
+| `MATRIX_TRUE_MP` | `1` | Drain per-seat agency intents into the live graph |
+| `MATRIX_RAG_OLLAMA` | `1` | Prefer Ollama embeddings (`nomic-embed-text`); hash fallback |
+| `MATRIX_RAG_EMBED` | `1` | Hashed embedding RAG (`0` = keyword cosine only) |
 
 ### Per-character brains
 
@@ -444,7 +463,7 @@ CONTINUOUS — starting next cycle immediately
 |---|---|---|
 | **0** | Jack-in → white rabbit → office → interrogation → **bug HITL** | Refuse implants bug then continues |
 | **I** | Dream glitch → meet Trinity → **trust HITL** → briefing / doubt | Then Architect |
-| **II** | Architect (may skip Oracle) → **oracle HITL** → cafe → Agent **swarm** (Send) → bend/enforce reality → lobby → **pursuit loop** → **pill HITL** | Blue → ending shortcut |
+| **II** | Architect → **oracle HITL** → cafe → Merovingian/Persephone → Keymaker/Seraph → **open wander or highway** → Agent **swarm** → bend/enforce → lobby → **pursuit** → **pill HITL** | Blue → ending shortcut |
 | **III** | Ship awaken → farm → dinner → **steak HITL** → sentinel → **Construct** subgraph → **jump HITL** | Training score rises |
 | **IV** | Trinity warn → **fight/flee HITL** → combat → **radio HITL** → subway showdown loop → hardline | Showdown `won` / `escaped` |
 | **V** | **code HITL** → Zion → **resolve outcome** → epilogue → Operator persist | Redis life + agent knowledge |

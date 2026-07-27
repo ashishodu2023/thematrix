@@ -46,6 +46,13 @@ def aware_node(fn):
 
     @wraps(fn)
     def wrapper(state, *args, **kwargs):
+        # Drain networked seat intents so Neo/Trinity/Operator agency hits the graph
+        try:
+            from matrix.agency import merge_agency_into
+
+            merge_agency_into(state)
+        except Exception:  # noqa: BLE001
+            pass
         with use_state(state):
             out = fn(state, *args, **kwargs)
         _publish_snap(state, out)

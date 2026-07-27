@@ -99,7 +99,7 @@ def test_architect_skips_oracle_on_high_threat(monkeypatch):
     def fake_act(character, allowed, situation, state=None):
         from matrix.awareness import CharacterDecision
 
-        assert allowed == ["deploy_cafe"]
+        assert allowed == ["deploy_cafe", "quarantine_anomaly", "archive_anomaly"]
         return CharacterDecision("deploy_cafe", "Deploy immediately.", ""), {
             "character_actions": ["architect: deploy_cafe"],
         }

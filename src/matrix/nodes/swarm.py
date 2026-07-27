@@ -83,7 +83,6 @@ def reconcile(state: dict) -> dict:
     if actions:
         story.beat(f"Independent Agent actions: {len(actions)}")
     return {
-        "spoon_exists": spoon_seen or state.get("spoon_exists", True),
         "agent_memory": [
             f"swarm: peers reported spoon={spoon_seen}; "
             f"actions={len(actions)}"

@@ -21,6 +21,9 @@ CONTINUOUS_LEARNERS: tuple[str, ...] = (
     "niobe",
     "keymaker",
     "merovingian",
+    "persephone",
+    "seraph",
+    "sentinel",
 )
 
 # Fast mode: fewer LLM calls between lives

@@ -76,8 +76,11 @@ class SessionMemory:
             flags["took_key"] = True
         if state.get("key_choice") == "refuse_key":
             flags["refused_key"] = True
-        if (state.get("sticky_flags") or {}).get("defied_merovingian"):
+        sticky_in = state.get("sticky_flags") or {}
+        if sticky_in.get("defied_merovingian"):
             flags["defied_merovingian"] = True
+        if sticky_in.get("persephone_kiss"):
+            flags["persephone_kiss"] = True
         session.sticky_flags = flags
         cls.save(session)
         return session

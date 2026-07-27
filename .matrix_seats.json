@@ -1,0 +1,14 @@
+{
+  "online": {
+    "operator": 1785134438.4320772,
+    "neo": 1785134416.408712
+  },
+  "votes": {
+    "fight_or_flee": {
+      "operator": {
+        "choice": "flee",
+        "at": 1785134245.705885
+      }
+    }
+  }
+}
